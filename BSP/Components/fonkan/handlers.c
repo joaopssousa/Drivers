@@ -17,10 +17,6 @@ UART_HandleTypeDef huart2;
 
 int count_send = 0;
 
-//unsigned char flag_start = RESET;			// Flag de inicio do processo
-//unsigned char flag_tag = RESET;				// Flag de Leitura do módulo RFID (Versão ou TAG)
-//unsigned char flag_confirm = RESET;			// Flag de confirmação pelo bluetooth
-//unsigned char flag_connection = RESET;		// Flag de confirmação de conexão com bluetooth
 unsigned char flag_send_timeout = RESET;
 
 
@@ -113,6 +109,7 @@ bool assert_version(uint8_t major_version, uint8_t minor_version, uint8_t patch_
 /*
  * Função de tratamento e interpretação da mensagem vinda do módulo RFID
  */
+#if (DEVICE_TYPE == 0x02)
 int message_handler(uint8_t *message, int index)
 {
 	memcpy(TAG, message, index+1);					// Copia a TAG lida para o vetor (sem o ultimo 0x0A)
@@ -169,10 +166,12 @@ int message_handler(uint8_t *message, int index)
 
 	return 3; 								// Alguma coisa deu errado
 }
+#endif
 
 int ble_handler(uint8_t *message)
 {
 	switch (message[1]) {
+#if (DEVICE_TYPE == 0x02)
 		case REQUEST_CONNECTION:
 			/*
 			 * 	Pedido de Conexão
@@ -180,7 +179,7 @@ int ble_handler(uint8_t *message)
 			if(flags_ble.connection == SET)
 			{
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
-				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONECTION, MSG_BLE_SIZE, 100);
+				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
 			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
 			  	flags_ble.start = SET;
 			}
@@ -222,6 +221,8 @@ int ble_handler(uint8_t *message)
 		  	clear_buffers();
 			break_conection();						// Função de quebra de conexão
 			break;
+#endif
+/****************************************** Common to all devices - Commands to Remote Update **************************************/
 
 		case REQUEST_DEVICE_TYPE:
 			HAL_UART_Transmit(&huart1, (uint8_t *) &answer_device_type,sizeof(answer_device_type),100);
@@ -251,6 +252,7 @@ int ble_handler(uint8_t *message)
 		default:
 			// Sem requisição válida
 			break;
+/*********************************************************************************************************************************/
 	}
 
 	return 0;
@@ -286,11 +288,12 @@ void break_conection(){
 
 }
 
+#if (DEVICE_TYPE == 0x02)
 void clear_buffers(){
 	last_TAG = EMPTY_QUEUE;
 	memset(&store_TAG, 0, sizeof(store_TAG));
 }
-
+#endif
 
 
 
