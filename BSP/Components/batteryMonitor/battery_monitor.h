@@ -11,7 +11,7 @@
 
 	// function prototypes
 	void init_battery_monitor(void);
-	float get_battery_voltage (void);
+	double get_battery_voltage (void);
 
 #endif /* INC_BATTERY_MONITOR_H_ */
 

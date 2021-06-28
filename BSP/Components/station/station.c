@@ -49,6 +49,7 @@ extern RTC_HandleTypeDef RtcHandle;
 extern I2C_HandleTypeDef hi2c1;
 
 RTC_HandleTypeDef *hrtc = &RtcHandle;
+uint8_t flag_pluv = 0;
 
 void init_station()
 {
@@ -242,14 +243,7 @@ void muda_buffer(Sensor_AppData *AppData, char Buffer_to_send[])
 void mede_mm_chuva(){
 	//extern RTC_TimeTypeDef currTime;
 	PLUVIOMETER_COUNT++;
-//	if (currTime.Hours == 23 && currTime.Minutes == 59 && currTime.Seconds > 54)
-//	{
-//
-//	  // SEPARAR UM LUGAR DE MEMORIA PARA OS DADOS DE ARMAZENAMENTO DE PRECIPITAÇÃO DIARIA.
-//
-//	  // Inicio de outro dia, zera-se o contador de precipitação.
-//	  PLUVIOMETER_COUNT = 0;
-//	}
+	flag_pluv = 1;
 }
 
 void mede_velocidade_vento(){

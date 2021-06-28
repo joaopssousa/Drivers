@@ -32,7 +32,7 @@
 #endif
 
 
-#define VOLTAGE_DIVIDER_RATIO 		((RESISTOR1 + RESISTOR2) / (float)(RESISTOR2)) // ratio between Vin and Vout
+#define VOLTAGE_DIVIDER_RATIO 		((RESISTOR1 + RESISTOR2) / (double)(RESISTOR2)) // ratio between Vin and Vout
 #define MAX_INPUT_VOLTAGE_ON_ADC 	3.3
 #define OFFSET 						0.1 										   // offset value used to correct final voltage
 
@@ -48,14 +48,14 @@ void init_battery_monitor(void)
 }
 
 // returns the voltage of a battery
-float get_battery_voltage (void)
+double get_battery_voltage (void)
 {
 	// inicializa a conversão em PC14
 	HAL_ADC_PollForConversion(&hadc_bat_monitor, HAL_MAX_DELAY);
 
 	uint16_t adc_return_value = HAL_ADC_GetValue(&hadc_bat_monitor);
-	float voltage_on_adc_pin = adc_return_value *  MAX_INPUT_VOLTAGE_ON_ADC / MAX_RESOLUTION_ADC;
-	float battery_voltage = (VOLTAGE_DIVIDER_RATIO * voltage_on_adc_pin) - OFFSET;
+	double voltage_on_adc_pin = adc_return_value *  MAX_INPUT_VOLTAGE_ON_ADC / MAX_RESOLUTION_ADC;
+	double battery_voltage = (VOLTAGE_DIVIDER_RATIO * voltage_on_adc_pin) - OFFSET;
 
 	return battery_voltage;
 }

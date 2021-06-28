@@ -236,8 +236,9 @@ int ble_handler(uint8_t *message)
 			if(assert_version(message[2], message[3], message[4])){
 				if(assert_device_type(message[5]))
 				{
-					HAL_UART_Transmit(&huart1, (uint8_t *) &answer_execute_update_buffer, sizeof(answer_execute_update_buffer), 100);
 					flags_ble.update_mode = SET;
+					HAL_UART_Transmit(&huart1, (uint8_t *) &answer_execute_update_buffer, sizeof(answer_execute_update_buffer), 100);
+
 				}
 				else
 				{

@@ -39,6 +39,7 @@ typedef struct
 
 } Sensor_AppData;
 
+extern uint8_t flag_pluv;
 enum Direcoes {
 	Norte,
 	Nordeste,
