@@ -18,7 +18,7 @@
 #define 	MSG_BLE_SIZE					10
 #define 	MSG_RFID_SIZE 				 	3
 #define 	MSG_USER_8W_SIZE			 	9
-#define 	STORAGE_SIZE					50
+#define 	STORAGE_SIZE					200
 #define		EMPTY_QUEUE         			-1
 #define 	TIMEOUT_BETWEEN_RESEND_TAG 		100
 #define     MSG_ID_SIZE 					3
@@ -96,11 +96,11 @@ extern int count_send;
 //extern unsigned char flag_connection;
 extern unsigned char flag_send_timeout;
 
-extern uint8_t message[TAG_SIZE];
+extern uint8_t message[500/*TAG_SIZE*/];
 extern int message_index;
 extern uint8_t message_ble[MSG_BLE_SIZE];
 extern int ble_index;
-extern uint8_t TAG[TAG_SIZE];
+extern uint8_t TAG[500/*TAG_SIZE*/];
 
 extern uint8_t rx_byte_uart1[1];
 extern uint8_t rx_byte_uart2[1];
@@ -133,7 +133,7 @@ int message_handler(uint8_t *message, int index);
 
 int ble_handler(uint8_t *message);
 
-void break_conection();
+void break_connection();
 
 void clear_buffers();
 

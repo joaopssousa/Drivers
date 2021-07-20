@@ -36,15 +36,15 @@ unsigned char flag_send_timeout = RESET;
 #define ANSWER_UPDATE_SUCCESS		0x33
 #define ANSWER_DEVICE_TYPE			0x34
 #define ANSWER_WRONG_DEVICE_TYPE	0x35
+#define ANSWER_END_CONNECTION		0x5F
 
-
-uint8_t message[TAG_SIZE] = { 0 };				// Vetor de retorno do módulo RFID (Versão, armazenamento da TAG)
+uint8_t message[500/*TAG_SIZE*/] = { 0 };				// Vetor de retorno do módulo RFID (Versão, armazenamento da TAG)
 int message_index = 0;						// Index da mensagem
 uint8_t message_ble[MSG_BLE_SIZE] = { 0 };		// Mensagem do bluetooth
 int ble_index = 0;							// Index de mensagem do bluetooth
 int ble_state = 0;							// Flag de estado do bluetooth
 
-uint8_t TAG[TAG_SIZE] = { 0 };					// Vetor de resposta do módulo RFID (Resposta, versão ou TAG)
+uint8_t TAG[500/*TAG_SIZE*/] = { 0 };					// Vetor de resposta do módulo RFID (Resposta, versão ou TAG)
 
 Model_TAG store_TAG[STORAGE_SIZE] = { 0 };	// Armazenamento de TAGs em caso de sobreposição de leitura, ja iniciada limpa.
 int last_TAG = -1;							// Variável que mostra a ultima posição ocupada na lista
@@ -63,6 +63,8 @@ uint8_t READ_EPC_SINGLE_TAG[MSG_RFID_SIZE] = {0xA, 0x51, 0x0D};
 uint8_t READ_USER_SINGLE_TAG[MSG_USER_8W_SIZE] = {0x0A, 0x52, 0x33, 0x2C, 0x30, 0x2C, 0x30, 0x33, 0x0D};
 uint8_t READ_ID_READER[MSG_ID_SIZE] = {0x0A, 0x53, 0x0D};
 uint8_t READ_MULTIPLE_TAG[MSG_MULTI_TAG_SIZE] = {0x0A, 0x55, 0x0D};
+
+uint8_t answer_end_connection[3] = {0x0A, ANSWER_END_CONNECTION, 0x0D};
 
 uint8_t answer_firmware_version_buffer [6] = {0x0A, ANSWER_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, PATCH_FIRMWARE_VERSION, 0x0D};
 uint8_t answer_execute_update_buffer [3] =   {0x0A, ANSWER_EXECUTE_UPDATE, 0x0D};
@@ -112,7 +114,7 @@ bool assert_version(uint8_t major_version, uint8_t minor_version, uint8_t patch_
 #if (DEVICE_TYPE == 0x02)
 int message_handler(uint8_t *message, int index)
 {
-	memcpy(TAG, message, index+1);					// Copia a TAG lida para o vetor (sem o ultimo 0x0A)
+	memcpy(TAG, message, index+1);					// Copia a TAG lida para o vetor
 	message_index = 0;								// Reseta o índice no vetor de mensagem
 
 	// TODO Melhorar a rotina de comparação entre TAG recebida e ja armazenadas para todas e não apenas a ultima lida
@@ -122,9 +124,9 @@ int message_handler(uint8_t *message, int index)
 //		return 2;									// Código de retorno quando a TAG lida é igual a lida anteriormente
 //	}
 
-
+	PRINTF("====>   Tamanho = %d \r\n", index);
 	//memset(message, 0, TAG_SIZE);					// Limpa buffer de mensagem para nova recepção
-	if(index == TAG_SIZE - 1)
+	if(index == TAG_SIZE + 3/*- 1*/)
 	{
 		/*
 		 * 	Verifica que recebido foi a leitura de uma TAG válida, então:
@@ -188,7 +190,7 @@ int ble_handler(uint8_t *message)
 				// TODO Testar se a quebra de conexão continua travando e como ajeitar
 				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
 				flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
-				break_conection();						// Quebra conexão pois houve algum erro no módulo BLE
+				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
 			}
 
 			break;
@@ -203,9 +205,9 @@ int ble_handler(uint8_t *message)
 			break;
 		case REQUEST_ID:
 			/*
-			 *  Pedido da ID do leitor RFID
+			 *  Pedido de ID do leitor RFID
 			 */
-			HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
+			HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
 			HAL_UART_Transmit(&huart2, (uint8_t *)READ_ID_READER, MSG_RFID_SIZE, 100);		// Enviou a requisição ao módulo RFID
 
 			while(flags_ble.tag != SET){
@@ -216,10 +218,11 @@ int ble_handler(uint8_t *message)
 
 		case END_CONNECTION:
 			// Pedido de encerramento de conexão
-			HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
+			HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
 			flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
+			HAL_UART_Transmit(&huart1, (uint8_t *) answer_end_connection, 3, 100);
 		  	clear_buffers();
-			break_conection();						// Função de quebra de conexão
+			break_connection();						// Função de quebra de conexão
 			break;
 #endif
 /****************************************** Common to all devices - Commands to Remote Update **************************************/
@@ -277,7 +280,7 @@ int ble_handler(uint8_t *message)
 //	 else 	return 0;
 //}
 
-void break_conection(){
+void break_connection(){
 
 	HAL_GPIO_WritePin(BLE_BRK_GPIO_Port, BLE_BRK_Pin, RESET);		// Aciona o pino que interrompe a possível conexão errada.
 
