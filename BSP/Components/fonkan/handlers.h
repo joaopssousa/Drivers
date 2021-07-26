@@ -14,8 +14,9 @@
 #define     PKG_SIZE 						16
 #define     USER_BANK_3W                	15
 #define 	TAG_SIZE 						36
+#define		MSG_WRITE_EARRING_SIZE			33
 #define 	ID_SIZE							12
-#define 	MSG_BLE_SIZE					10
+#define 	MSG_BLE_SIZE					MSG_WRITE_EARRING_SIZE
 #define 	MSG_RFID_SIZE 				 	3
 #define 	MSG_USER_8W_SIZE			 	9
 #define 	STORAGE_SIZE					200
@@ -46,7 +47,7 @@ typedef union
           connection : 1, /* Unused */
 		  update_mode : 1,     /* Unused */
           enable_handler : 1,     /* Unused */
-          spare1 : 1,     /* Unused */
+          rfid_send_cmd : 1,     /* Unused */
           spare0 : 1;     /* Unused */
  };
 } flags_connectivity;
@@ -79,7 +80,7 @@ extern uint8_t READ_ID_READER[MSG_ID_SIZE];
 extern uint8_t READ_MULTIPLE_TAG[MSG_MULTI_TAG_SIZE];
 
 extern uint8_t BLE_TAG_RECEIVED[MSG_TAG_RCV_SIZE];
-extern uint8_t BLE_ESTABLISHED_CONECTION[MSG_CONNECTION_ESTABLISHED_SIZE];
+extern uint8_t BLE_ESTABLISHED_CONNECTION[MSG_CONNECTION_ESTABLISHED_SIZE];
 //char BLE_TAG_TO_SEND[TAG_SIZE] = TAG;
 
 extern TIM_HandleTypeDef htim2;
@@ -104,6 +105,7 @@ extern uint8_t TAG[500/*TAG_SIZE*/];
 
 extern uint8_t rx_byte_uart1[1];
 extern uint8_t rx_byte_uart2[1];
+extern uint8_t bytes_read_rfid;
 
 extern Model_TAG store_TAG[STORAGE_SIZE];
 extern int last_TAG;

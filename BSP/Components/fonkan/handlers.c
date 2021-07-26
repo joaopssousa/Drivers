@@ -22,12 +22,15 @@ unsigned char flag_send_timeout = RESET;
 
 #define REQUEST_CONNECTION 			0x60
 #define TAG_CONFIRMATION 			0x61
+#define ESTABLISHED_CONNECTION		0x62
 #define REQUEST_ID 					0x63
 #define END_CONNECTION 				0x6F
+#define WRITE_EARRING_NUMBER		0X65
 
 #define REQUEST_FIRMWARE_VERSION	0x20
 #define REQUEST_DEVICE_TYPE			0x21
 #define REQUEST_EXECUTE_UPDATE		0x22
+#define REQUEST_WRITE_EARRING		0x23
 
 
 #define ANSWER_FIRMWARE_VERSION		0x30
@@ -36,6 +39,7 @@ unsigned char flag_send_timeout = RESET;
 #define ANSWER_UPDATE_SUCCESS		0x33
 #define ANSWER_DEVICE_TYPE			0x34
 #define ANSWER_WRONG_DEVICE_TYPE	0x35
+
 #define ANSWER_END_CONNECTION		0x5F
 
 uint8_t message[500/*TAG_SIZE*/] = { 0 };				// Vetor de retorno do módulo RFID (Versão, armazenamento da TAG)
@@ -59,10 +63,13 @@ int delayed_store_flag = 0;
 uint8_t rx_byte_uart1[1];					// Recepcao da uart1
 uint8_t rx_byte_uart2[1];					// Recepcao da uart2
 
+uint8_t bytes_read_rfid =0;
+
 uint8_t READ_EPC_SINGLE_TAG[MSG_RFID_SIZE] = {0xA, 0x51, 0x0D};
 uint8_t READ_USER_SINGLE_TAG[MSG_USER_8W_SIZE] = {0x0A, 0x52, 0x33, 0x2C, 0x30, 0x2C, 0x30, 0x33, 0x0D};
 uint8_t READ_ID_READER[MSG_ID_SIZE] = {0x0A, 0x53, 0x0D};
 uint8_t READ_MULTIPLE_TAG[MSG_MULTI_TAG_SIZE] = {0x0A, 0x55, 0x0D};
+uint8_t MSG_WRITE_EARRING [MSG_WRITE_EARRING_SIZE] = {0x0A, 0x57, 0x31, 0x2C, 0x32, 0x2C ,0x36, 0x2C, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x0D};
 
 uint8_t answer_end_connection[3] = {0x0A, ANSWER_END_CONNECTION, 0x0D};
 
@@ -73,8 +80,8 @@ uint8_t answer_wrong_device_type [3] =		 {0x0A, ANSWER_WRONG_DEVICE_TYPE, 0x0D};
 uint8_t answer_update_success_buffer [3] =   {0x0A, ANSWER_UPDATE_SUCCESS, 0x0D};
 uint8_t answer_device_type[4] = 			 {0x0A, ANSWER_DEVICE_TYPE, DEVICE_TYPE, 0x0D};
 
-uint8_t BLE_TAG_RECEIVED[MSG_TAG_RCV_SIZE] = {0x0A, 0x61, 0x0D};
-uint8_t BLE_ESTABLISHED_CONECTION[MSG_CONNECTION_ESTABLISHED_SIZE] = {0x0A, 0x62, 0x0D};
+uint8_t BLE_TAG_RECEIVED[MSG_TAG_RCV_SIZE] = {0x0A, TAG_CONFIRMATION, 0x0D};
+uint8_t BLE_ESTABLISHED_CONNECTION[MSG_CONNECTION_ESTABLISHED_SIZE] = {0x0A, ESTABLISHED_CONNECTION, 0x0D};
 //char BLE_TAG_TO_SEND[TAG_SIZE] = TAG;
 
 
@@ -111,11 +118,11 @@ bool assert_version(uint8_t major_version, uint8_t minor_version, uint8_t patch_
 /*
  * Função de tratamento e interpretação da mensagem vinda do módulo RFID
  */
-#if (DEVICE_TYPE == 0x02)
-int message_handler(uint8_t *message, int index)
+#if (DEVICE_TYPE == CURRAL)
+int message_handler(uint8_t *message, int pkg_length)
 {
-	memcpy(TAG, message, index+1);					// Copia a TAG lida para o vetor
-	message_index = 0;								// Reseta o índice no vetor de mensagem
+	uint8_t total_de_brincos = (pkg_length - 4) / TAG_SIZE;
+	memcpy(TAG, message, pkg_length);					// Copia a TAG lida para o vetor
 
 	// TODO Melhorar a rotina de comparação entre TAG recebida e ja armazenadas para todas e não apenas a ultima lida
 //	if(memcmp(TAG, message, TAG_SIZE) != 0)			// Como a comparação é feita aqui, deve-se limpar o buffer 'message' depois
@@ -124,10 +131,12 @@ int message_handler(uint8_t *message, int index)
 //		return 2;									// Código de retorno quando a TAG lida é igual a lida anteriormente
 //	}
 
-	PRINTF("====>   Tamanho = %d \r\n", index);
+
 	//memset(message, 0, TAG_SIZE);					// Limpa buffer de mensagem para nova recepção
-	if(index == TAG_SIZE + 3/*- 1*/)
+
+	if(pkg_length >= TAG_SIZE + 4/*- 1*/)
 	{
+		PRINTF("Tamanho = %d \r\n", pkg_length);
 		/*
 		 * 	Verifica que recebido foi a leitura de uma TAG válida, então:
 		 *  - Copia a TAG para o armazenamento para envio;
@@ -145,23 +154,17 @@ int message_handler(uint8_t *message, int index)
 		if(last_TAG == STORAGE_SIZE - 1){			// Se for vista a ultima TAG, então começa a sobreescrever
 			clear_buffers();
 		}
-		memcpy(store_TAG[++last_TAG].N_TAG, TAG, TAG_SIZE-1);
+
+		for (int i=0; i<total_de_brincos;i++){
+			memcpy(store_TAG[++last_TAG].N_TAG, &TAG[(i*TAG_SIZE)], TAG_SIZE-1);
+		}
 
 		return 1;							// Confirmação que foi lida e armazenada uma TAG
 	}
-	else if(index < TAG_SIZE - 1)
+	else
 	{
-		if (index == MSG_RFID_SIZE) // Em caso de retorno padrão, sem leitura de TAG. Passa 0xFF ao vetor TAG
+		if (pkg_length == MSG_RFID_SIZE+1) // Em caso de retorno padrão, sem leitura de TAG. Passa 0xFF ao vetor TAG
 			memset(TAG, 255, TAG_SIZE);
-		if (index == ID_SIZE) // Em caso de retorno de ID do leitor RFID. Mantém a mensagem no vetor TAG
-		{
-		}
-		if (index == USER_BANK_3W) {
-			if (last_TAG == STORAGE_SIZE - 1) // Se for vista a ultima TAG, então começa a sobreescrever
-				last_TAG = EMPTY_QUEUE; // Se o último espaço de armazenamento estiver ocupado, reinicia o armazenamento da base.
-
-			memcpy(store_TAG[++last_TAG].N_TAG, TAG, index + 1);
-		}
 
 		return 0;                            // Sinaliza retorno padrão ou de ID
 	}
@@ -172,8 +175,10 @@ int message_handler(uint8_t *message, int index)
 
 int ble_handler(uint8_t *message)
 {
+	uint8_t sizeofEarring;
+	uint8_t initialPosition;
 	switch (message[1]) {
-#if (DEVICE_TYPE == 0x02)
+#if (DEVICE_TYPE == CURRAL)
 		case REQUEST_CONNECTION:
 			/*
 			 * 	Pedido de Conexão
@@ -181,7 +186,7 @@ int ble_handler(uint8_t *message)
 			if(flags_ble.connection == SET)
 			{
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
-				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
+				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONNECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
 			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
 			  	flags_ble.start = SET;
 			}
@@ -199,7 +204,7 @@ int ble_handler(uint8_t *message)
 			 * 	Confirmação de TAG recebida, destravar para enviar nova TAG
 			 */
 			flags_ble.confirm = SET;
-			PRINTF("====>   flag_confirm = SET \r\n");
+			PRINTF("====>   confirm = SET \r\n");
 
 				// TODO Criar trava de sistema
 			break;
@@ -207,13 +212,6 @@ int ble_handler(uint8_t *message)
 			/*
 			 *  Pedido de ID do leitor RFID
 			 */
-			HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
-			HAL_UART_Transmit(&huart2, (uint8_t *)READ_ID_READER, MSG_RFID_SIZE, 100);		// Enviou a requisição ao módulo RFID
-
-			while(flags_ble.tag != SET){
-				;
-			}
-			HAL_UART_Transmit(&huart1, (uint8_t *) TAG, ID_SIZE, 100);
 			break;
 
 		case END_CONNECTION:
@@ -224,6 +222,21 @@ int ble_handler(uint8_t *message)
 		  	clear_buffers();
 			break_connection();						// Função de quebra de conexão
 			break;
+
+		case WRITE_EARRING_NUMBER:
+			for (sizeofEarring=2; sizeofEarring<TAG_SIZE; sizeofEarring++)
+			{
+				if(message[sizeofEarring] == 0x0D)
+				{
+					break;
+				}
+			}
+			sizeofEarring -= 2;
+			initialPosition = (MSG_WRITE_EARRING_SIZE-1) - sizeofEarring;
+			memcpy(&MSG_WRITE_EARRING[initialPosition], &message[2], sizeofEarring );
+			HAL_UART_Transmit(&huart1, (uint8_t *) MSG_WRITE_EARRING, MSG_WRITE_EARRING_SIZE, 100);
+			break;
+
 #endif
 /****************************************** Common to all devices - Commands to Remote Update **************************************/
 
@@ -292,7 +305,7 @@ void break_connection(){
 
 }
 
-#if (DEVICE_TYPE == 0x02)
+#if (DEVICE_TYPE == CURRAL)
 void clear_buffers(){
 	last_TAG = EMPTY_QUEUE;
 	memset(&store_TAG, 0, sizeof(store_TAG));
