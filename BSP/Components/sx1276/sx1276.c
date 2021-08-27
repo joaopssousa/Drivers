@@ -391,7 +391,7 @@ void RxChainCalibration( void )
     }
 
     // Sets a Frequency in HF band
-    SX1276SetChannel( 915000000 ); //was 868 J.P.
+    SX1276SetChannel( 868000000 );
 
     // Launch Rx chain calibration for HF band
     SX1276Write( REG_IMAGECAL, ( SX1276Read( REG_IMAGECAL ) & RF_IMAGECAL_IMAGECAL_MASK ) | RF_IMAGECAL_IMAGECAL_START );
@@ -400,7 +400,6 @@ void RxChainCalibration( void )
     }
 
     // Restore context
-    PRINTF("Reg PA: %d \r\n", regPaConfigInitVal);
     SX1276Write( REG_PACONFIG, regPaConfigInitVal );
     SX1276SetChannel( initialFreq );
 }
@@ -642,7 +641,6 @@ void SX1276SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
         break;
     case MODEM_LORA:
         {
-        	PRINTF("SETTXCONFIG power %d\r\n", power);
             SX1276.Settings.LoRa.Power = power;
             if( bandwidth > 2 )
             {
@@ -1173,8 +1171,6 @@ void SX1276SetTxContinuousWave( uint32_t freq, int8_t power, uint16_t time )
 {
     uint32_t timeout = ( uint32_t )( time * 1000 );
 
-    PRINTF("SX1276SetTxContinuousWave : power = %d\r\n", power);
-
     SX1276SetChannel( freq );
 
     SX1276SetTxConfig( MODEM_FSK, power, 0, 0, 4800, 0, 5, false, false, 0, 0, 0, timeout );
@@ -1474,7 +1470,7 @@ void SX1276OnTimeoutIrq( void* context )
 void SX1276OnDio0Irq( void* context )
 {
     volatile uint8_t irqFlags = 0;
-    PRINTF("DIO0Irq\r\n");
+
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
@@ -1662,7 +1658,6 @@ void SX1276OnDio0Irq( void* context )
 
 void SX1276OnDio1Irq( void* context )
 {
-	PRINTF("DIO1Irq\r\n");
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
@@ -1751,7 +1746,7 @@ void SX1276OnDio1Irq( void* context )
 void SX1276OnDio2Irq( void* context )
 {
     uint32_t afcChannel = 0;
-    PRINTF("DIO2Irq\r\n");
+
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
@@ -1823,7 +1818,6 @@ void SX1276OnDio2Irq( void* context )
 
 void SX1276OnDio3Irq( void* context )
 {
-	PRINTF("DIO3Irq\r\n");
     switch( SX1276.Settings.Modem )
     {
     case MODEM_FSK:

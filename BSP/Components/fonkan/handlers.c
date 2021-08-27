@@ -185,6 +185,7 @@ int ble_handler(uint8_t *message)
 			 */
 			if(flags_ble.connection == SET)
 			{
+				PRINTF("Recebeu Start\r\n");
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
 				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONNECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
 			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
@@ -216,11 +217,16 @@ int ble_handler(uint8_t *message)
 
 		case END_CONNECTION:
 			// Pedido de encerramento de conexão
-			HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
-			flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
+
 			HAL_UART_Transmit(&huart1, (uint8_t *) answer_end_connection, 3, 100);
-		  	clear_buffers();
-			break_connection();						// Função de quebra de conexão
+			if (flags_ble.start == SET)
+			{
+				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
+				flags_ble.start = RESET;				// Reseta a flag de inicio da comunicação
+				//clear_buffers();
+				break_connection();						// Função de quebra de conexão
+			}
+
 			break;
 
 		case WRITE_EARRING_NUMBER:

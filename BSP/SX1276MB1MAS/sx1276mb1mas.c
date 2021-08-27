@@ -195,6 +195,7 @@ void SX1276SetRfTxPower( int8_t power )
             }
             if( power > 20 )
             {
+            	PRINTF("Full Power 20\r\n");
                 power = 20;
             }
             paConfig = ( paConfig & RF_PACONFIG_OUTPUTPOWER_MASK ) | ( uint8_t )( ( uint16_t )( power - 5 ) & 0x0F );
@@ -285,7 +286,7 @@ static void SX1276AntSwDeInit( void )
 
 void SX1276SetAntSw( uint8_t opMode )
 {
-	//PRINTF("opMode = %d\r\n", opMode);
+	PRINTF("opMode = %d\r\n", opMode);
     switch( opMode )
     {
     case RFLR_OPMODE_TRANSMITTER:

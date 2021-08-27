@@ -39,7 +39,31 @@ typedef struct
 
 } Sensor_AppData;
 
-extern uint8_t flag_pluv;
+/*
+ * Estrutura de flags
+ */
+typedef union
+{
+ uint8_t     all_flags;      /* Allows us to refer to the flags 'en masse' */
+ struct
+ {
+  uint8_t pluviometer : 1,      		/* 1: verificacao do horario para zerar dados do pluviometro */
+          bmp_failed : 1,       		/* 1: Indica falha nos sensores do BMP280 (Temperatura, Pressao, Humidade) */
+		  active_irradiator : 1,		/* 1: Irradiador presente */
+          receive_measure_irrad : 1, 	/* 1: Recebeu uma medida válida do Medidor de irradiacao */
+		  read_sensors : 1,     		/* 1: Realiza leitura dos sensores */
+          spare3 : 1,     		/* Unused */
+          spare4 : 1,     		/* Unused */
+          spare5 : 1;     		/* Unused */
+ };
+} flags_station;
+
+extern flags_station flagsStation;
+extern uint16_t pluviometer_count;
+extern uint32_t aux_count_velo;
+extern uint32_t count_velo;
+extern Estation_Parameters Parameters;
+
 enum Direcoes {
 	Norte,
 	Nordeste,
@@ -62,28 +86,13 @@ enum sens {
 };
 typedef enum sens sens;
 
-// Inicialização dos parâmetros da estação para posterior atribuição.
-Estation_Parameters Parameters;
+
 
 /* Functions */
-//TODO: Alterar nome da função sensores
-bool Call_BME280(Estation_Parameters *Parameters);
-
-void Call_Pluviometer(Estation_Parameters *Parameters);
-
-void Call_Anemometro(Estation_Parameters *Parameters);
-
-void Call_Anemometro2(Estation_Parameters *Parameters);
-
-bool Call_Biruta(Estation_Parameters *Parameters);
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc);
 
-void corrige_data(int dia, int mes, int ano);
-
-void corrige_hora(int hora, int minutos, int segundos);
-
-void Sensores(Estation_Parameters *Parameters);
+void read_sensors(Estation_Parameters *Parameters);
 
 void muda_buffer(Sensor_AppData *AppData, char Buffer_to_send[]);
 

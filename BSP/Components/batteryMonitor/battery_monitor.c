@@ -44,14 +44,14 @@ static ADC_HandleTypeDef hadc_bat_monitor;
 void init_battery_monitor(void)
 {
 	config_vbat_reader();
-	HAL_ADC_Start(&hadc_bat_monitor);
 }
 
 // returns the voltage of a battery
 double get_battery_voltage (void)
 {
+	HAL_ADC_Start(&hadc_bat_monitor);
 	// inicializa a conversão em PC14
-	HAL_ADC_PollForConversion(&hadc_bat_monitor, HAL_MAX_DELAY);
+	HAL_ADC_PollForConversion(&hadc_bat_monitor, 1000);
 
 	uint16_t adc_return_value = HAL_ADC_GetValue(&hadc_bat_monitor);
 	double voltage_on_adc_pin = adc_return_value *  MAX_INPUT_VOLTAGE_ON_ADC / MAX_RESOLUTION_ADC;

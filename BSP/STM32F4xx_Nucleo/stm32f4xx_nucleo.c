@@ -536,11 +536,11 @@ uint8_t SD_IO_WriteByte(uint8_t Data)
 void LCD_IO_Init(void)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
-   
+
   /* LCD_CS_GPIO and LCD_DC_GPIO Periph clock enable */
   LCD_CS_GPIO_CLK_ENABLE();
   LCD_DC_GPIO_CLK_ENABLE();
-  
+
   /* Configure LCD_CS_PIN pin: LCD Card CS pin */
   GPIO_InitStruct.Pin = LCD_CS_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -551,10 +551,10 @@ void LCD_IO_Init(void)
   /* Configure LCD_DC_PIN pin: LCD Card DC pin */
   GPIO_InitStruct.Pin = LCD_DC_PIN;
   HAL_GPIO_Init(LCD_DC_GPIO_PORT, &GPIO_InitStruct);
-  
+
   /* LCD chip select high */
   LCD_CS_HIGH();
-  
+
   /* LCD SPI Config */
   SPIx_Init();
 }
@@ -567,13 +567,13 @@ void LCD_IO_WriteReg(uint8_t LCDReg)
 {
   /* Reset LCD control line CS */
   LCD_CS_LOW();
-  
+
   /* Set LCD data/command line DC to Low */
   LCD_DC_LOW();
-    
+
   /* Send Command */
   SPIx_Write(LCDReg);
-  
+
   /* Deselect : Chip Select high */
   LCD_CS_HIGH();
 }
@@ -587,13 +587,13 @@ void LCD_IO_WriteData(uint8_t Data)
 {
   /* Reset LCD control line CS */
   LCD_CS_LOW();
-  
+
   /* Set LCD data/command line DC to High */
   LCD_DC_HIGH();
 
   /* Send Data */
   SPIx_Write(Data);
-  
+
   /* Deselect : Chip Select high */
   LCD_CS_HIGH();
 }
@@ -607,10 +607,10 @@ void LCD_IO_WriteMultipleData(uint8_t *pData, uint32_t Size)
 {
   uint32_t counter = 0;
   __IO uint32_t data = 0;
-  
+
   /* Reset LCD control line CS */
   LCD_CS_LOW();
-  
+
   /* Set LCD data/command line DC to High */
   LCD_DC_HIGH();
 
@@ -631,7 +631,7 @@ void LCD_IO_WriteMultipleData(uint8_t *pData, uint32_t Size)
       }
       /* Need to invert bytes for LCD*/
       *((__IO uint8_t*)&hnucleo_Spi.Instance->DR) = *(pData+1);
-      
+
       while(((hnucleo_Spi.Instance->SR) & SPI_FLAG_TXE) != SPI_FLAG_TXE)
       {
       }
@@ -639,12 +639,12 @@ void LCD_IO_WriteMultipleData(uint8_t *pData, uint32_t Size)
       counter--;
       pData += 2;
       }
-  
-    /* Wait until the bus is ready before releasing Chip select */ 
+
+    /* Wait until the bus is ready before releasing Chip select */
     while(((hnucleo_Spi.Instance->SR) & SPI_FLAG_BSY) != RESET)
     {
-    } 
-  } 
+    }
+  }
 
   /* Empty the Rx fifo */
   data = *(&hnucleo_Spi.Instance->DR);
