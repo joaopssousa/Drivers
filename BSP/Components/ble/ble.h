@@ -133,6 +133,8 @@ int message_handler(uint8_t *message, int index);
 
 int ble_handler(uint8_t *message);
 
+void ble_config(void);
+
 void break_conection();
 
 void clear_buffers();

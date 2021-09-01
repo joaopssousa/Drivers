@@ -17,7 +17,7 @@
 extern UART_HandleTypeDef huart2;
 
 extern uint8_t count_measures;
-extern float measures;
+extern uint32_t measures;
 
 
 //TODO Comentar descrição da função

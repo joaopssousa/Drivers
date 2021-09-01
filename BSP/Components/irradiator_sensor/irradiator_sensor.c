@@ -10,6 +10,7 @@
 #include "station.h"
 #include <string.h>
 #include <stdlib.h>
+#include "hw.h"
 
 //Macros locais
 #define ZERO	        0x30
@@ -22,7 +23,7 @@ uint8_t bit_Data[PACKET_SIZE] = {0};
 uint8_t count_byte_irradiator = 0;
 uint8_t count_measures = 0;
 
-float measures = 0;
+uint32_t measures = 0;
 
 
 /*!
@@ -58,6 +59,7 @@ uint32_t getIntMeasure(void){
 				pos++;
 			}
 		}
+		count_byte_irradiator = 0;
     return atoi((const char*)&bufferInt);
 }
 
@@ -73,15 +75,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	if (huart->Instance != USART2) {
 		return;
 	}
-  else{
-    count_byte_irradiator++;
-    if(count_byte_irradiator > 4) {
-      if(bit_Data[count_byte_irradiator-1] == '\n') {
-        flagsStation.receive_measure_irrad = 1;
-      }
-    }
-    HAL_UART_Receive_IT(&huart2, (uint8_t*)&(bit_Data[count_byte_irradiator]), 1);
-  }
+	else{
+		count_byte_irradiator++;
+		if(count_byte_irradiator > 4) {
+		  if(bit_Data[count_byte_irradiator-1] == '\n') {
+			flagsStation.receive_measure_irrad = 1;
+		  }
+		}
+		HAL_UART_Receive_IT(&huart2, (uint8_t*)&(bit_Data[count_byte_irradiator]), 1);
+	}
 }
 
 static void MX_USART2_UART_Init(void)

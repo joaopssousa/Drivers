@@ -116,6 +116,24 @@ int ble_handler(uint8_t *message)
 	return 0;
 }
 
+void ble_config(void) {
+	HAL_UART_Transmit(&huart1, (uint8_t *)"AT+BAUD0", sizeof("AT+BAUD0"), 100); //9600
+
+	switch(DEVICE_TYPE) {
+	case MAJOR_FIRMWARE_VERSION:
+		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEEstação", sizeof("AT+NAMEEstação"), 100);
+		break;
+	case MINOR_FIRMWARE_VERSION:
+		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMECurral", sizeof("AT+NAMECurral"), 100);
+		break;
+	case PATCH_FIRMWARE_VERSION:
+		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEPortal", sizeof("AT+NAMEPortal"), 100);
+		break;
+	default:
+		break;
+	}
+}
+
 
 /**
   * @brief USART1 Initialization Function
@@ -139,7 +157,6 @@ void MX_USART1_UART_Init(void)
   }
 
 }
-
 
 /**
   * @brief GPIO Initialization Function
