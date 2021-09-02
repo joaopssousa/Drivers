@@ -8,6 +8,7 @@
 #include "main.h"
 #include "ble.h"
 #include "firmware_version.h"
+#include "Commissioning.h"
 
 #include <string.h>
 
@@ -117,17 +118,49 @@ int ble_handler(uint8_t *message)
 }
 
 void ble_config(void) {
-	HAL_UART_Transmit(&huart1, (uint8_t *)"AT+BAUD0", sizeof("AT+BAUD0"), 100); //9600
+	/* Set Baudrate	*/
+	HAL_UART_Transmit(&huart1, (uint8_t *)BAUD_9600, sizeof(BAUD_9600)-1, 100); //9600
 
+	uint8_t weatherstationSetName[20] = {0};
+	uint8_t name_Id[4] = {0};
+	uint16_t dev_addr = LORAWAN_DEVICE_ADDRESS;//0x0002
+	uint8_t hex[4] = {0};
+	sprintf((char*)hex, "%x", dev_addr);
+	uint8_t lenght = strlen((char*)hex);
+
+	switch(lenght) {
+	case 1:
+		sprintf((char*)name_Id, "000%s", hex);
+		break;
+	case 2:
+		sprintf((char*)name_Id, "00%s", hex);
+		break;
+	case 3:
+		sprintf((char*)name_Id, "0%s", hex);
+		break;
+	case 4:
+		sprintf((char*)name_Id, "%s", hex);
+		break;
+	default:
+		break;
+	}
+
+	strcat(strcpy((char*)weatherstationSetName, WEATHERSTATION_NAME), (char*)name_Id);
+
+	/* Set Ble name	*/
 	switch(DEVICE_TYPE) {
-	case MAJOR_FIRMWARE_VERSION:
-		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEEstação", sizeof("AT+NAMEEstação"), 100);
+	case WEATHERSTATION:
+		//sprintf((char*)weatherstationSetName,"%s%s", WEATHERSTATION_NAME, dev_addr);
+		HAL_UART_Transmit(&huart1, (uint8_t *)weatherstationSetName, sizeof(weatherstationSetName)-1, 100);
 		break;
-	case MINOR_FIRMWARE_VERSION:
-		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMECurral", sizeof("AT+NAMECurral"), 100);
+	case CURRAL:
+		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMECurral_xxxx", sizeof("AT+NAMECurral_xxxx")-1, 100);
 		break;
-	case PATCH_FIRMWARE_VERSION:
-		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEPortal", sizeof("AT+NAMEPortal"), 100);
+	case PORTAL:
+		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEPortal_xxxx", sizeof("AT+NAMEPortal_xxxx")-1, 100);
+		break;
+	case ELETRIFICADOR:
+		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEEletrificador_xxxx", sizeof("AT+NAMEEletrificador_xxxx")-1, 100);
 		break;
 	default:
 		break;

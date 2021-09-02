@@ -26,6 +26,21 @@
 #define		MSG_TAG_RCV_SIZE 				3
 #define 	MSG_CONNECTION_ESTABLISHED_SIZE 3
 
+#define		BAUD_9600	"AT+BAUD0"
+#define		BAUD_19200	"AT+BAUD1"
+#define		BAUD_38400	"AT+BAUD2"
+#define		BAUD_57600	"AT+BAUD3"
+#define		BAUD_115200	"AT+BAUD4"
+#define		BAUD_4800	"AT+BAUD5"
+#define		BAUD_2400	"AT+BAUD6"
+#define		BAUD_1200	"AT+BAUD7"
+#define		BAUD_230400	"AT+BAUD8"
+
+#define		WEATHERSTATION_NAME	"AT+NAMEEstacao_"
+#define		CURRAL_NAME			"AT+NAMECurral_"
+#define		PORTAL_NAME			"AT+NAMEPortal_"
+#define		ELETRIFICADOR_NAME	"AT+NAMEEletrificador_"
+
 typedef enum{
 	YES = 1,
 	NO = 0,
