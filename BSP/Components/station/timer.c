@@ -18,14 +18,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2)
 	{
-		// Quando estourar o timer de 1 segundo exporta o numero de ciclos
-		count_velo = aux_count_velo;
-		aux_count_velo = 0;
+		//Timeouts
 		flagsStation.pluviometer = 1;
 	}
 	if (htim->Instance == TIM3)
 	{
-		//Timeouts
+		// Quando estourar o timer de 5 segundos exporta o numero de ciclos
+		count_velo = aux_count_velo;
+		aux_count_velo = 0;
 		flagsStation.read_sensors=1;
 	}
 }
