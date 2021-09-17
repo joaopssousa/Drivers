@@ -6,7 +6,6 @@
  */
 
 #include "station.h"
-//#include "hw_i2c.h"
 #include "bmp280.h"
 #include "hw.h"
 #include <string.h>
@@ -85,7 +84,7 @@ static bool Call_BME280(Estation_Parameters *Parameters)
 {
 
 	if(!flagsStation.bmp_failed){
-		while (!bmp280_read_float(&bmp280, &temperature, &pressure, &humidity))
+		if (!bmp280_read_float(&bmp280, &temperature, &pressure, &humidity))
 		{
 			// ACIONAR UMA FLAG PARA DIZER QUE DEU PROBLEMA NA LEITURA DO BMP280
 			// Por padrão se a inicialização não funcionar todos retornam 0xFF.
@@ -141,7 +140,7 @@ static bool Call_Biruta(Estation_Parameters *Parameters)
 	for(int i = 0;i<MAX_READINGS;i++)
 	{
 		HAL_ADC_Start(&hadc2);
-		HAL_ADC_PollForConversion(&hadc2, 1000);
+		HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
 		raw = (double) HAL_ADC_GetValue(&hadc2);
 		raw2 = GET_RAW_VOLTAGE(raw);
 		// Divide cada amostra pelo total de leituras para que ao fim do ciclo ja tenha-se a média
@@ -179,6 +178,8 @@ void read_sensors(Estation_Parameters *Parameters)
 	Call_Pluviometer(Parameters);
 
 	Call_Anemometro(Parameters);
+
+	PRINTF("Contador Vento %d\r\n", count_velo);
 
 	Call_Biruta(Parameters);
 
