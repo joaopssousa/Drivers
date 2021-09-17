@@ -138,6 +138,7 @@ extern uint8_t answer_update_success_buffer [3];
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
+
 void MX_TIM3_Init(void);
 void MX_TIM2_Init(void);
 

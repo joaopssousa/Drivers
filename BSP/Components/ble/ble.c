@@ -53,6 +53,8 @@ uint8_t rtext[_MAX_SS] = { 0 };		/* File read buffer */
 
 flags_connectivity flags_ble;
 
+//static uint8_t dataUART1[32];
+
 bool assert_device_type (uint8_t device_type){
 	if (DEVICE_TYPE == device_type)
 		return true;
@@ -118,14 +120,16 @@ int ble_handler(uint8_t *message)
 }
 
 void ble_config(void) {
-	/* Set Baudrate	*/
+//	/* Set Baudrate	*/
 	HAL_UART_Transmit(&huart1, (uint8_t *)BAUD_9600, sizeof(BAUD_9600)-1, 100); //9600
 
-	uint8_t weatherstationSetName[20] = {0};
+	//HAL_UART_Receive(&huart1, dataUART1, 8, 1000);
+
+	uint8_t setName[26] = {0};
 	uint8_t name_Id[4] = {0};
 	uint16_t dev_addr = LORAWAN_DEVICE_ADDRESS;//0x0002
 	uint8_t hex[4] = {0};
-	sprintf((char*)hex, "%x", dev_addr);
+	sprintf((char*)hex, "%x", dev_addr);//2
 	uint8_t lenght = strlen((char*)hex);
 
 	switch(lenght) {
@@ -145,26 +149,31 @@ void ble_config(void) {
 		break;
 	}
 
-	strcat(strcpy((char*)weatherstationSetName, WEATHERSTATION_NAME), (char*)name_Id);
+	//HAL_UART_Receive(&huart1, dataUART1, 8, 1000);
 
 	/* Set Ble name	*/
 	switch(DEVICE_TYPE) {
 	case WEATHERSTATION:
-		//sprintf((char*)weatherstationSetName,"%s%s", WEATHERSTATION_NAME, dev_addr);
-		HAL_UART_Transmit(&huart1, (uint8_t *)weatherstationSetName, sizeof(weatherstationSetName)-1, 100);
+		strcat(strcpy((char*)setName, WEATHERSTATION_NAME), (char*)name_Id);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-7, 100);
 		break;
 	case CURRAL:
-		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMECurral_xxxx", sizeof("AT+NAMECurral_xxxx")-1, 100);
+		strcat(strcpy((char*)setName, CURRAL_NAME), (char*)name_Id);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-8, 100);
 		break;
 	case PORTAL:
-		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEPortal_xxxx", sizeof("AT+NAMEPortal_xxxx")-1, 100);
+		strcat(strcpy((char*)setName, PORTAL_NAME), (char*)name_Id);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-8, 100);
 		break;
 	case ELETRIFICADOR:
-		HAL_UART_Transmit(&huart1, (uint8_t *)"AT+NAMEEletrificador_xxxx", sizeof("AT+NAMEEletrificador_xxxx")-1, 100);
+		strcat(strcpy((char*)setName, ELETRIFICADOR_NAME), (char*)name_Id);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-1, 100);
 		break;
 	default:
 		break;
 	}
+
+	//HAL_UART_Transmit(&huart1, dataUART1, 8, 1000);
 }
 
 
