@@ -8,6 +8,7 @@
 #define __IRRADIATOR_SENSOR_H
 
 #define PACKET_SIZE 30
+#define MAX_MEASURES  5
 
 #define IRRADIATOR_TX_Pin GPIO_PIN_2
 #define IRRADIATOR_TX_GPIO_Port GPIOA
