@@ -15,6 +15,7 @@
 //Macros locais
 #define ZERO	        0x30
 #define NOVE        	0x39
+//#define MAX_MEASURES_VALUE	5
 
 UART_HandleTypeDef huart2;
 

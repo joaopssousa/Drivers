@@ -120,11 +120,6 @@ int ble_handler(uint8_t *message)
 }
 
 void ble_config(void) {
-//	/* Set Baudrate	*/
-	HAL_UART_Transmit(&huart1, (uint8_t *)BAUD_9600, sizeof(BAUD_9600)-1, 100); //9600
-
-	//HAL_UART_Receive(&huart1, dataUART1, 8, 1000);
-
 	uint8_t setName[26] = {0};
 	uint8_t name_Id[4] = {0};
 	uint16_t dev_addr = LORAWAN_DEVICE_ADDRESS;//0x0002
@@ -149,31 +144,34 @@ void ble_config(void) {
 		break;
 	}
 
-	//HAL_UART_Receive(&huart1, dataUART1, 8, 1000);
+	/* Set Baudrate	*/
+	HAL_UART_Transmit(&huart1, (uint8_t *)BAUD_9600, sizeof(BAUD_9600)-1, 100);
+	HAL_Delay(400);
 
 	/* Set Ble name	*/
 	switch(DEVICE_TYPE) {
 	case WEATHERSTATION:
 		strcat(strcpy((char*)setName, WEATHERSTATION_NAME), (char*)name_Id);
-		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-7, 100);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-8, 200);
 		break;
 	case CURRAL:
 		strcat(strcpy((char*)setName, CURRAL_NAME), (char*)name_Id);
-		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-8, 100);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-9, 200);
 		break;
 	case PORTAL:
 		strcat(strcpy((char*)setName, PORTAL_NAME), (char*)name_Id);
-		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-8, 100);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-9, 200);
 		break;
 	case ELETRIFICADOR:
 		strcat(strcpy((char*)setName, ELETRIFICADOR_NAME), (char*)name_Id);
-		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-1, 100);
+		HAL_UART_Transmit(&huart1, (uint8_t *)setName, sizeof(setName)-2, 200);
 		break;
 	default:
 		break;
 	}
+	HAL_Delay(400);
+	HAL_UART_Transmit(&huart1, (uint8_t *)"AT+ROLE0", sizeof("AT+ROLE0")-1, 200);
 
-	//HAL_UART_Transmit(&huart1, dataUART1, 8, 1000);
 }
 
 

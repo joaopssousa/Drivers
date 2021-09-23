@@ -36,10 +36,10 @@
 #define		BAUD_1200	"AT+BAUD7"
 #define		BAUD_230400	"AT+BAUD8"
 
-#define		WEATHERSTATION_NAME	"AT+NAMEEstacao_"
-#define		CURRAL_NAME			"AT+NAMECurral_"
-#define		PORTAL_NAME			"AT+NAMEPortal_"
-#define		ELETRIFICADOR_NAME	"AT+NAMEEletrificador_"
+#define		WEATHERSTATION_NAME	"AT+NAMEEstacao"
+#define		CURRAL_NAME			"AT+NAMECurral"
+#define		PORTAL_NAME			"AT+NAMEPortal"
+#define		ELETRIFICADOR_NAME	"AT+NAMEEletrificador"
 
 typedef enum{
 	YES = 1,
