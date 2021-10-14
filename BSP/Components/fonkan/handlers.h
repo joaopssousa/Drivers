@@ -11,6 +11,7 @@
 #include "hw.h"
 
 
+
 #define     PKG_SIZE 						16
 #define     USER_BANK_3W                	15
 #define 	TAG_SIZE 						36
@@ -89,7 +90,7 @@ extern TIM_HandleTypeDef htim3;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;	// Porta serial do módulo RFID
 
-extern int count_send;
+extern uint8_t count_send_to_lora;
 
 //extern unsigned char flag_start;
 //extern unsigned char flag_tag;
@@ -140,5 +141,7 @@ void break_connection();
 void clear_buffers();
 
 void Ble_Init_GPIO();
+
+void init_update(void);
 
 #endif /* INC_HANDLERS_H_ */

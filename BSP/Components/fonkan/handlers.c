@@ -6,7 +6,9 @@
  */
 
 #include "main.h"
+
 #include "handlers.h"
+
 #include "firmware_version.h"
 
 #include <string.h>
@@ -15,7 +17,7 @@
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
-int count_send = 0;
+uint8_t count_send_to_lora = 0;
 
 unsigned char flag_send_timeout = RESET;
 
@@ -188,16 +190,17 @@ int ble_handler(uint8_t *message)
 				PRINTF("Recebeu Start\r\n");
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
 				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONNECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
-			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
+				if(HAL_TIM_Base_GetState(&htim2)==HAL_TIM_STATE_RESET)
+					HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
 			  	flags_ble.start = SET;
 			}
-			else
-			{
-				// TODO Testar se a quebra de conexão continua travando e como ajeitar
-				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
-				flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
-				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
-			}
+//			else
+//			{
+//				// TODO Testar se a quebra de conexão continua travando e como ajeitar
+//				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
+//				//flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
+//				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
+//			}
 
 			break;
 		case TAG_CONFIRMATION:
@@ -398,4 +401,14 @@ void Ble_Init_GPIO(void)
 
 }
 
-
+void init_update(void)
+{
+	flags_ble.update_mode = RESET;
+	HAL_NVIC_DisableIRQ(USART1_IRQn);
+	HAL_UART_AbortReceive_IT(&huart1);
+	HAL_UART_DeInit(&huart1);
+	HAL_Delay(1);
+	COM_Init();
+	HAL_Delay(1);
+	COM_Flush();
+}
