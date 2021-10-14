@@ -3,7 +3,8 @@
 
 UART_HandleTypeDef huart2;
 
-uint8_t InitCommandData[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
+uint8_t initCommandData[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
+uint8_t reciverBuffer[100]= {};
 
 
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
@@ -22,10 +23,27 @@ void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 	  }
 }
 
-
-void Init_Communication()
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	HAL_UART_Transmit(&huart2,(uint8_t *)InitCommandData, InitCommandData[0]+1,100);
+	HAL_UART_Transmit(&huart2,(uint8_t *)reciverBuffer, 1,100);
 }
+void init_Communication()
+{
+	HAL_UART_Transmit(&huart2,(uint8_t *)initCommandData, initCommandData[0]+1,100);
+}
+
+void callbackUART()
+{
+	HAL_UART_Receive_IT(&huart2, reciverBuffer, 1);
+
+}
+
+uint8_t reciverData()
+{
+	HAL_UART_Receive(&huart2, (uint8_t *)reciverBuffer, 15, 100);
+	return reciverBuffer;
+}
+
+
 
 
