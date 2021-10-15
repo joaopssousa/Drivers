@@ -61,7 +61,7 @@ int delayed_in_use_TAG = 0;								// Variável usada para envio sequencial da l
 int delayed_store_flag = 0;
 
 uint8_t rx_byte_uart1[1];					// Recepcao da uart1
-uint8_t rx_byte_uart2[1];					// Recepcao da uart2
+//uint8_t rx_byte_uart2[3];					// Recepcao da uart2
 
 uint8_t bytes_read_rfid =0;
 
