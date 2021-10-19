@@ -10,7 +10,8 @@ uint8_t	requestData[] = {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0
 uint8_t	communicationData[] = {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31,
 							   0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
 bool recieverFlag = 0;
-uint8_t data[100] = {};
+
+uint8_t data[500] = {};
 uint8_t earring[100] = {};
 uint8_t reciverBuffer[500]= {};
 
@@ -19,6 +20,7 @@ void initReciver();
 void init_Communication();
 void Irradiator_Init_GPIO(void);
 void saveData();
+void communicationSucessefull(bool erro);
 
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 {
@@ -72,9 +74,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 void init_Communication()
 {
-
 	HAL_UART_Transmit(&huart2,(uint8_t *)initCommandData, initCommandData[0]+1,100);
-
 }
 
 void sendUART()
@@ -82,11 +82,7 @@ void sendUART()
 	//HAL_UART_Receive_IT(&huart2, reciverBuffer, 5);
 	if(recieverFlag)
 	{
-
-		if(data[0] == 0x15)
-		HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
-
-
+		//HAL_UART_Transmit(&huart2,(uint8_t *)data, da,100);
 		recieverFlag = 0;
 	}
 
@@ -99,25 +95,25 @@ void initReciver()
 
 void saveData()
 {
-	memcpy(data,reciverBuffer,reciverBuffer[0]+1);
+	memcpy(data,reciverBuffer,50);
 	uint8_t errordata[] = {0x04, 0xFF, 0xFF, 0xFF, 0xFF};
 
-	if(data[0] == 0x11)
+	if(data[0] == 0x11 && memcmp(data,communicationData,communicationData[0]) == 0)
 	{
-		for(int i = 1; i <= data[0]; i++)
-		{
-			if(data[i] != communicationData[i])
-			{
-				HAL_UART_Transmit(&huart2, (uint8_t *)errordata, errordata[0]+1, 100);
-				break;
-			}else
-				HAL_UART_Transmit(&huart2,(uint8_t *)requestData, requestData[0]+1,100);
+		HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
 
-		}
+	}else if(data[0] == 0x15)
+	{
+		//HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
+	}
+	else
+	{
+		HAL_UART_Transmit(&huart2, (uint8_t *)errordata, errordata[0]+1, 100);
 	}
 
 	//memset(reciverBuffer, 0 , reciverBuffer[0]+1);
 }
+
 
 void earringRequest()
 {
