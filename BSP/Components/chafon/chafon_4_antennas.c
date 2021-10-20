@@ -16,6 +16,25 @@ uint8_t earring[100] = {};
 uint8_t reciverBuffer[500]= {};
 
 
+/* lista*/
+typedef struct node {
+    int val;
+    struct node * next;
+} node_t;
+
+struct node *head = NULL;
+struct node *current = NULL;
+
+node_t * head = NULL;
+
+head = (node_t *) malloc(sizeof(node_t));
+head->val = 1;
+head->next = (node_t *) malloc(sizeof(node_t));
+head->next->val = 2;
+head->next->next = NULL;
+
+/* Fim lista*/
+
 void initReciver();
 void init_Communication();
 void Irradiator_Init_GPIO(void);
@@ -82,7 +101,7 @@ void sendUART()
 	//HAL_UART_Receive_IT(&huart2, reciverBuffer, 5);
 	if(recieverFlag)
 	{
-		//HAL_UART_Transmit(&huart2,(uint8_t *)data, da,100);
+		//HAL_UART_Transmit(&huart2,(uint8_t *)data, data[0]+1,100);
 		recieverFlag = 0;
 	}
 
@@ -102,21 +121,22 @@ void saveData()
 	{
 		HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
 
-	}else if(data[0] == 0x15)
-	{
-		//HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
 	}
-	else
-	{
-		HAL_UART_Transmit(&huart2, (uint8_t *)errordata, errordata[0]+1, 100);
-	}
+	else if(data[0] == 0x15)
+		{
+
+		}
+	else if(data[0] == 0x11)
+		{
+			HAL_UART_Transmit(&huart2, (uint8_t *)errordata, errordata[0]+1, 100);
+		}
 
 	//memset(reciverBuffer, 0 , reciverBuffer[0]+1);
 }
 
 
-void earringRequest()
+void sendEarring(u_int8_t *earring)
 {
-
+	memcpy(earring,data,11);
 }
 
