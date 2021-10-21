@@ -4,6 +4,7 @@
 
 
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
 
 uint8_t initCommandData[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
 uint8_t	requestData[] = {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0x23};
@@ -14,31 +15,18 @@ bool recieverFlag = 0;
 uint8_t data[500] = {};
 uint8_t earring[100] = {};
 uint8_t reciverBuffer[500]= {};
+uint8_t lastEarring = 0;
 
+bool contbyte = 0;
+bool contarray = 0;
+bool communFlag = 0;
 
-/* lista*/
-typedef struct node {
-    int val;
-    struct node * next;
-} node_t;
-
-struct node *head = NULL;
-struct node *current = NULL;
-
-node_t * head = NULL;
-
-head = (node_t *) malloc(sizeof(node_t));
-head->val = 1;
-head->next = (node_t *) malloc(sizeof(node_t));
-head->next->val = 2;
-head->next->next = NULL;
-
-/* Fim lista*/
+Model_earrings earrings[200];
 
 void initReciver();
 void init_Communication();
-void Irradiator_Init_GPIO(void);
-void saveData();
+void Chafon_Init_GPIO(void);
+void verificationComunication();
 void communicationSucessefull(bool erro);
 
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
@@ -55,12 +43,28 @@ void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 	  {
 	    Error_Handler();
 	  }
-	Irradiator_Init_GPIO() ;
+	Chafon_Init_GPIO() ;
 	init_Communication();
-	initReciver();
+	 initReciver();
+
 
 }
-void Irradiator_Init_GPIO(void)
+void DebugChafon_UART(USART_TypeDef * uartPort,uint32_t baudRate)
+{
+	huart3.Instance = uartPort;
+	huart3.Init.BaudRate = baudRate;
+	huart3.Init.WordLength = UART_WORDLENGTH_8B;
+	huart3.Init.StopBits = UART_STOPBITS_1;
+	huart3.Init.Parity = UART_PARITY_NONE;
+	huart3.Init.Mode = UART_MODE_TX_RX;
+	huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+	if (HAL_UART_Init(&huart3) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+}
+void Chafon_Init_GPIO(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -84,11 +88,17 @@ void Irradiator_Init_GPIO(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	recieverFlag = 1;
-
-	saveData();
-
-	HAL_UART_Receive_IT(&huart2,reciverBuffer, 22);
+	if(communFlag)
+	{
+		data[contbyte] = reciverBuffer;
+		contbyte++;
+		if(contbyte == data[0]+1)
+		{
+			contbyte = 0;
+			recieverFlag = 1;
+		}
+	}
+	HAL_UART_Receive_IT(&huart2,reciverBuffer, 1);
 
 }
 void init_Communication()
@@ -101,35 +111,48 @@ void sendUART()
 	//HAL_UART_Receive_IT(&huart2, reciverBuffer, 5);
 	if(recieverFlag)
 	{
-		//HAL_UART_Transmit(&huart2,(uint8_t *)data, data[0]+1,100);
+		//HAL_UART_Transmit(&huart2,(uint8_t *)earrings, 12,100);
+		memcpy(&earrings[contarray++].N_TAG,data[8],12);
 		recieverFlag = 0;
+		//HAL_UART_Transmit(&huart2,(uint8_t *)earrings.N_TAG[0], 12, 100);
 	}
+
 
 }
 void initReciver()
 {
 	HAL_UART_Receive_IT(&huart2, reciverBuffer, 18);
+	memcpy(data,reciverBuffer,18);
+	verificationComunication();
+//	if(contbyte == data[0]+1)
+//	{
+//		HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
+//		contbyte = 0;
+//		verificationComunication();
+//	}
+
+
+
 }
 
 
-void saveData()
+void verificationComunication()
 {
-	memcpy(data,reciverBuffer,50);
-	uint8_t errordata[] = {0x04, 0xFF, 0xFF, 0xFF, 0xFF};
+
 
 	if(data[0] == 0x11 && memcmp(data,communicationData,communicationData[0]) == 0)
-	{
-		HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
+			{
+				HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
+				communFlag = 1;
+				PRINTF("communication sucessfull chafon \n");
 
-	}
-	else if(data[0] == 0x15)
-		{
+			}
+			else
+			{
+				HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
 
-		}
-	else if(data[0] == 0x11)
-		{
-			HAL_UART_Transmit(&huart2, (uint8_t *)errordata, errordata[0]+1, 100);
-		}
+				PRINTF("communication fail chafon\n");
+			}
 
 	//memset(reciverBuffer, 0 , reciverBuffer[0]+1);
 }
