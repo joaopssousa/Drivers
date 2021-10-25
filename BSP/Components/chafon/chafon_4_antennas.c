@@ -4,7 +4,6 @@
 
 
 UART_HandleTypeDef huart2;
-UART_HandleTypeDef huart3;
 
 uint8_t initCommandData[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
 uint8_t	requestData[] = {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0x23};
@@ -14,12 +13,14 @@ bool recieverFlag = 0;
 
 uint8_t data[500] = {};
 uint8_t earring[100] = {};
+uint8_t verification[18] = {};
 uint8_t reciverBuffer[500]= {};
 uint8_t lastEarring = 0;
 
-bool contbyte = 0;
-bool contarray = 0;
+int contbyte = 0;
+int contarray = 0;
 bool communFlag = 0;
+bool cleanBuffFlag = 0;
 
 Model_earrings earrings[200];
 
@@ -45,25 +46,12 @@ void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 	  }
 	Chafon_Init_GPIO() ;
 	init_Communication();
-	 initReciver();
+	//initReciver();
+
 
 
 }
-void DebugChafon_UART(USART_TypeDef * uartPort,uint32_t baudRate)
-{
-	huart3.Instance = uartPort;
-	huart3.Init.BaudRate = baudRate;
-	huart3.Init.WordLength = UART_WORDLENGTH_8B;
-	huart3.Init.StopBits = UART_STOPBITS_1;
-	huart3.Init.Parity = UART_PARITY_NONE;
-	huart3.Init.Mode = UART_MODE_TX_RX;
-	huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart3) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-}
+
 void Chafon_Init_GPIO(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -88,22 +76,34 @@ void Chafon_Init_GPIO(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(communFlag)
-	{
-		data[contbyte] = reciverBuffer;
+//HAL_UART_Transmit(&huart2, (uint8_t *)reciverBuffer, reciverBuffer[0]+1, 100);
+
+		data[contbyte] =  *reciverBuffer;
+		//PRINTF("teste ---- %x -- %d\n\n", data[contbyte], contbyte);
 		contbyte++;
-		if(contbyte == data[0]+1)
+		if(contbyte == data[0]+1 && data[0] == 0x11)
 		{
 			contbyte = 0;
 			recieverFlag = 1;
 		}
-	}
-	HAL_UART_Receive_IT(&huart2,reciverBuffer, 1);
+		else if(contbyte == data[0]+1 && data[0] == 0x15)
+		{
+			//recieverFlag = 1;
+			communFlag = 1;
+			contbyte = 0;
+		}else if(contbyte == data[0]+1 && data[0] == 0x07)
+		{cleanBuffFlag = 1;}
+
+		HAL_UART_Receive_IT(&huart2,reciverBuffer, 1);
+//	recieverFlag = 1;
+
 
 }
 void init_Communication()
 {
 	HAL_UART_Transmit(&huart2,(uint8_t *)initCommandData, initCommandData[0]+1,100);
+	HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
+
 }
 
 void sendUART()
@@ -111,10 +111,25 @@ void sendUART()
 	//HAL_UART_Receive_IT(&huart2, reciverBuffer, 5);
 	if(recieverFlag)
 	{
-		//HAL_UART_Transmit(&huart2,(uint8_t *)earrings, 12,100);
-		memcpy(&earrings[contarray++].N_TAG,data[8],12);
 		recieverFlag = 0;
-		//HAL_UART_Transmit(&huart2,(uint8_t *)earrings.N_TAG[0], 12, 100);
+		verificationComunication();
+
+	}
+	if(communFlag)
+	{
+		memcpy(earring,data,data[0]+1);
+		for(int i = 0; i < earring[0]+1 ; i++ )
+		{
+			PRINTF(" %x",earring[i]);
+		}
+		PRINTF("\n");
+		communFlag = 0;
+	}
+
+	if(cleanBuffFlag)
+	{
+		memset(data, 0 , data[0]+1);
+		PRINT("---clean---");
 	}
 
 
@@ -122,8 +137,8 @@ void sendUART()
 void initReciver()
 {
 	HAL_UART_Receive_IT(&huart2, reciverBuffer, 18);
-	memcpy(data,reciverBuffer,18);
-	verificationComunication();
+	communFlag = 1;
+
 //	if(contbyte == data[0]+1)
 //	{
 //		HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
@@ -138,20 +153,21 @@ void initReciver()
 
 void verificationComunication()
 {
+	memcpy(verification,data,18);
 
-
-	if(data[0] == 0x11 && memcmp(data,communicationData,communicationData[0]) == 0)
+	if(data[0] == 0x11 && memcmp(data,communicationData,communicationData[0]+1) == 0)
 			{
 				HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
 				communFlag = 1;
 				PRINTF("communication sucessfull chafon \n");
+				memset(data, 0 , data[0]+1);
 
 			}
 			else
 			{
-				HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
 
-				PRINTF("communication fail chafon\n");
+
+				PRINTF("communication fail chafon \n");
 			}
 
 	//memset(reciverBuffer, 0 , reciverBuffer[0]+1);
@@ -160,6 +176,6 @@ void verificationComunication()
 
 void sendEarring(u_int8_t *earring)
 {
-	memcpy(earring,data,11);
+	memcpy(earring,data,data[0]+1);
 }
 
