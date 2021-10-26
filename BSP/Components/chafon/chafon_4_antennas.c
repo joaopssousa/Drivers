@@ -21,6 +21,8 @@ int contbyte = 0;
 int contarray = 0;
 bool communFlag = 0;
 bool cleanBuffFlag = 0;
+bool requestFlag = 0;
+bool verificationFlag = 0;
 
 Model_earrings earrings[200];
 
@@ -92,9 +94,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			communFlag = 1;
 			contbyte = 0;
 		}else if(contbyte == data[0]+1 && data[0] == 0x07)
-		{cleanBuffFlag = 1;}
-
-		HAL_UART_Receive_IT(&huart2,reciverBuffer, 1);
+		{
+			cleanBuffFlag = 1;
+			contbyte = 0;
+		}
+		HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
 //	recieverFlag = 1;
 
 
@@ -109,29 +113,57 @@ void init_Communication()
 void sendUART()
 {
 	//HAL_UART_Receive_IT(&huart2, reciverBuffer, 5);
-	if(recieverFlag)
-	{
-		recieverFlag = 0;
+	if(!verificationFlag)
 		verificationComunication();
 
-	}
+	if(recieverFlag)
+	{
+
+
 	if(communFlag)
 	{
 		memcpy(earring,data,data[0]+1);
-		for(int i = 0; i < earring[0]+1 ; i++ )
+		for(int i = 8; i< 20; i++)
 		{
-			PRINTF(" %x",earring[i]);
+			PRINTF(" %x--",earring[i]);
 		}
 		PRINTF("\n");
+		memcpy(earrings[0].N_TAG,& earring[8],12);
+		//for(int i = 0; i< 4; i++)
+				//{
+			for(int j = 0 ; j < 12; j++)
+			{
+				PRINTF("_%x",(earrings[2].N_TAG[j]));
+			}
+
+				//}
+		//PRINTF("_%x",*(earrings[lastEarring].N_TAG));
+		lastEarring++;
+//		for(int i = 8; i< 12; i++)
+//		{
+//			PRINTF("_%x",*(earrings[i].N_TAG));
+//
+//
+//		}
+		PRINTF("\n");
+
+
 		communFlag = 0;
 	}
 
 	if(cleanBuffFlag)
 	{
-		memset(data, 0 , data[0]+1);
-		PRINT("---clean---");
+		//memset(data, 0 , data[0]+1);
+		HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
+		//PRINTF("---clean---\n");
+		for(int i = 0; i < data[0]+1 ; i++ )
+		{
+			PRINTF(" %x",data[i]);
+		}
+		PRINTF("\n");
+		cleanBuffFlag = 0;
 	}
-
+	}
 
 }
 void initReciver()
@@ -155,19 +187,23 @@ void verificationComunication()
 {
 	memcpy(verification,data,18);
 
-	if(data[0] == 0x11 && memcmp(data,communicationData,communicationData[0]+1) == 0)
+	if(verification[0] == 0x11 && memcmp(verification,communicationData,communicationData[0]+1) == 0)
 			{
 				HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
 				communFlag = 1;
 				PRINTF("communication sucessfull chafon \n");
 				memset(data, 0 , data[0]+1);
+				recieverFlag = 1;
+				verificationFlag = 1;
 
 			}
-			else
+			else if(memcmp(verification,communicationData,communicationData[0]+1) != 0)
 			{
 
+				//PRINTF("communication fail chafon \n");
+				recieverFlag = 0;
 
-				PRINTF("communication fail chafon \n");
+
 			}
 
 	//memset(reciverBuffer, 0 , reciverBuffer[0]+1);
