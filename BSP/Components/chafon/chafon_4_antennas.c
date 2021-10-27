@@ -15,10 +15,12 @@ uint8_t data[500] = {};
 uint8_t earring[100] = {};
 uint8_t verification[18] = {};
 uint8_t reciverBuffer[500]= {};
-uint8_t lastEarring = 0;
 
+int lastEarring = 0;
 int contbyte = 0;
 int contarray = 0;
+int numberOfEarrings = 0;
+int change = 0;
 bool communFlag = 0;
 bool cleanBuffFlag = 0;
 bool requestFlag = 0;
@@ -86,11 +88,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		if(contbyte == data[0]+1 && data[0] == 0x11)
 		{
 			contbyte = 0;
-			recieverFlag = 1;
 		}
 		else if(contbyte == data[0]+1 && data[0] == 0x15)
 		{
-			//recieverFlag = 1;
 			communFlag = 1;
 			contbyte = 0;
 		}else if(contbyte == data[0]+1 && data[0] == 0x07)
@@ -109,6 +109,30 @@ void init_Communication()
 	HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
 
 }
+void getEarrings()
+{
+	sendUART();
+}
+
+uint8_t antennachange(bool ant1, bool ant2, bool ant3, bool ant4)
+{
+	int contAntenna = 0;
+
+	if(ant1 && change == 0)
+	{
+		return 0x80;
+	}else if (ant2 && change == 1)
+	{
+		return 0x81;
+	}else if (ant3 && change == 2)
+	{
+		return 0x82;
+	}else if (ant4 && change == 3)
+	{
+		return 0x83;
+	}
+
+}
 
 void sendUART()
 {
@@ -118,51 +142,22 @@ void sendUART()
 
 	if(recieverFlag)
 	{
-
-
-	if(communFlag)
-	{
-		memcpy(earring,data,data[0]+1);
-		for(int i = 8; i< 20; i++)
+		if(communFlag)
 		{
-			PRINTF(" %x--",earring[i]);
-		}
-		PRINTF("\n");
-		memcpy(earrings[0].N_TAG,& earring[8],12);
-		//for(int i = 0; i< 4; i++)
-				//{
-			for(int j = 0 ; j < 12; j++)
+			memcpy(earring,data,data[0]+1);
+
+			memcpy(earrings[lastEarring++].N_TAG, &earring[8], 12);
+
+			communFlag = 0;
+			memset(earring,0, 12);
+
+		}else if(cleanBuffFlag)
 			{
-				PRINTF("_%x",(earrings[2].N_TAG[j]));
+				memset(data, 0 , data[0]+1);
+				cleanBuffFlag = 0;
+				HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
+
 			}
-
-				//}
-		//PRINTF("_%x",*(earrings[lastEarring].N_TAG));
-		lastEarring++;
-//		for(int i = 8; i< 12; i++)
-//		{
-//			PRINTF("_%x",*(earrings[i].N_TAG));
-//
-//
-//		}
-		PRINTF("\n");
-
-
-		communFlag = 0;
-	}
-
-	if(cleanBuffFlag)
-	{
-		//memset(data, 0 , data[0]+1);
-		HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
-		//PRINTF("---clean---\n");
-		for(int i = 0; i < data[0]+1 ; i++ )
-		{
-			PRINTF(" %x",data[i]);
-		}
-		PRINTF("\n");
-		cleanBuffFlag = 0;
-	}
 	}
 
 }
@@ -212,6 +207,6 @@ void verificationComunication()
 
 void sendEarring(u_int8_t *earring)
 {
-	memcpy(earring,data,data[0]+1);
+	//memcpy(earring,data,data[0]+1);
 }
 
