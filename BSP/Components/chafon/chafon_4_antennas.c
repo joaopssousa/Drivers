@@ -5,34 +5,46 @@
 
 UART_HandleTypeDef huart2;
 
-uint8_t initCommandData[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
-uint8_t	requestData[] = {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0x23};
-uint8_t	communicationData[] = {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31,
-							   0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
+#define ANTENNA1 0x80
+#define ANTENNA2 0x81
+#define ANTENNA3 0x82
+#define ANTENNA4 0x83
+
+#define ANSWER_COMMUNICATION_SIZE 0X11
+#define EARRINGS_DATA_SIZE 0X15
+#define END_PACK_DATA_SIZE 0X07
+
+
+uint8_t INIT_COMMUNICATION_CHAFON[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
+uint8_t	DATA_REQUEST[] = {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0x23};
+uint8_t	CHAFON_ANSWER[] = {	0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31,
+							0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
+
 bool recieverFlag = 0;
 
 uint8_t data[500] = {};
 uint8_t earring[100] = {};
-uint8_t verification[18] = {};
-uint8_t reciverBuffer[500]= {};
+uint8_t verification_buffer[18] = {};
+uint8_t reciverBuffer[];
 
-int lastEarring = 0;
-int contbyte = 0;
-int contarray = 0;
-int numberOfEarrings = 0;
-int change = 0;
-bool communFlag = 0;
+uint16_t lastEarring = 0;
+uint16_t contbyte = 0;
+uint16_t contarray = 0;
+uint16_t numberOfEarrings = 0;
+uint16_t change = 0;
+
+bool communicationValidationFlag = 0;
 bool cleanBuffFlag = 0;
 bool requestFlag = 0;
 bool verificationFlag = 0;
 
 Model_earrings earrings[200];
 
-void initReciver();
-void init_Communication();
+
+static void init_Communication();
 void Chafon_Init_GPIO(void);
-void verificationComunication();
-void communicationSucessefull(bool erro);
+void verification_Comunication_Buffer();
+void uart_callback();
 
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 {
@@ -80,133 +92,89 @@ void Chafon_Init_GPIO(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-//HAL_UART_Transmit(&huart2, (uint8_t *)reciverBuffer, reciverBuffer[0]+1, 100);
-
-		data[contbyte] =  *reciverBuffer;
-		//PRINTF("teste ---- %x -- %d\n\n", data[contbyte], contbyte);
-		contbyte++;
-		if(contbyte == data[0]+1 && data[0] == 0x11)
-		{
-			contbyte = 0;
-		}
-		else if(contbyte == data[0]+1 && data[0] == 0x15)
-		{
-			communFlag = 1;
-			contbyte = 0;
-		}else if(contbyte == data[0]+1 && data[0] == 0x07)
-		{
-			cleanBuffFlag = 1;
-			contbyte = 0;
-		}
-		HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
-//	recieverFlag = 1;
-
-
+	uart_callback();
 }
+void uart_callback()
+{
+	data[contbyte++] =  *reciverBuffer;
+	if(contbyte == data[0]+1 && data[0] == ANSWER_COMMUNICATION_SIZE)
+	{
+		contbyte = 0;
+	}
+	else if(contbyte == data[0]+1 && data[0] == EARRINGS_DATA_SIZE)
+	{
+		communicationValidationFlag = 1;
+		contbyte = 0;
+	}else if(contbyte == data[0]+1 && data[0] == END_PACK_DATA_SIZE)
+	{
+		cleanBuffFlag = 1;
+		contbyte = 0;
+	}
+	HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
+}
+
 void init_Communication()
 {
-	HAL_UART_Transmit(&huart2,(uint8_t *)initCommandData, initCommandData[0]+1,100);
+	HAL_UART_Transmit(&huart2,(uint8_t *)INIT_COMMUNICATION_CHAFON, INIT_COMMUNICATION_CHAFON[0]+1,100);
 	HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
 
 }
+
 void getEarrings()
 {
-	sendUART();
+	data_Validation();
 }
 
-uint8_t antennachange(bool ant1, bool ant2, bool ant3, bool ant4)
+void data_request_chafon()
 {
-	int contAntenna = 0;
+	DATA_REQUEST[6] = ANTENNA2;
 
-	if(ant1 && change == 0)
-	{
-		return 0x80;
-	}else if (ant2 && change == 1)
-	{
-		return 0x81;
-	}else if (ant3 && change == 2)
-	{
-		return 0x82;
-	}else if (ant4 && change == 3)
-	{
-		return 0x83;
-	}
-
+	HAL_UART_Transmit(&huart2, (uint8_t *)DATA_REQUEST, DATA_REQUEST[0]+1, 100);
 }
-
-void sendUART()
+void data_Validation()
 {
-	//HAL_UART_Receive_IT(&huart2, reciverBuffer, 5);
 	if(!verificationFlag)
-		verificationComunication();
+		verification_Comunication_Buffer();
 
 	if(recieverFlag)
 	{
-		if(communFlag)
+		if(communicationValidationFlag)
 		{
-			memcpy(earring,data,data[0]+1);
-
-			memcpy(earrings[lastEarring++].N_TAG, &earring[8], 12);
-
-			communFlag = 0;
-			memset(earring,0, 12);
-
+			memcpy(earrings[lastEarring++].N_TAG, &data[8], 12);
+			communicationValidationFlag = 0;
 		}else if(cleanBuffFlag)
 			{
 				memset(data, 0 , data[0]+1);
 				cleanBuffFlag = 0;
-				HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
-
 			}
 	}
 
 }
-void initReciver()
+
+
+void verification_Comunication_Buffer()
 {
-	HAL_UART_Receive_IT(&huart2, reciverBuffer, 18);
-	communFlag = 1;
+	memcpy(verification_buffer,data,18);
 
-//	if(contbyte == data[0]+1)
-//	{
-//		HAL_UART_Transmit(&huart2, (uint8_t *)data, data[0]+1, 100);
-//		contbyte = 0;
-//		verificationComunication();
-//	}
+	if(verification_buffer[0] == 0x11 && memcmp(verification_buffer,CHAFON_ANSWER,CHAFON_ANSWER[0]+1) == 0)
+	{
+		communicationValidationFlag = 1;
+		PRINTF("communication sucessfull chafon \n");
+		memset(data, 0 , data[0]+1);
+		recieverFlag = 1;
+		verificationFlag = 1;
+		data_request_chafon();
+
+	}
+	else if(memcmp(verification_buffer,CHAFON_ANSWER,CHAFON_ANSWER[0]+1) != 0)
+	{
+
+		//PRINTF("communication fail chafon \n");
+		recieverFlag = 0;
 
 
+	}
 
 }
 
-
-void verificationComunication()
-{
-	memcpy(verification,data,18);
-
-	if(verification[0] == 0x11 && memcmp(verification,communicationData,communicationData[0]+1) == 0)
-			{
-				HAL_UART_Transmit(&huart2, (uint8_t *)requestData, requestData[0]+1, 100);
-				communFlag = 1;
-				PRINTF("communication sucessfull chafon \n");
-				memset(data, 0 , data[0]+1);
-				recieverFlag = 1;
-				verificationFlag = 1;
-
-			}
-			else if(memcmp(verification,communicationData,communicationData[0]+1) != 0)
-			{
-
-				//PRINTF("communication fail chafon \n");
-				recieverFlag = 0;
-
-
-			}
-
-	//memset(reciverBuffer, 0 , reciverBuffer[0]+1);
-}
-
-
-void sendEarring(u_int8_t *earring)
-{
-	//memcpy(earring,data,data[0]+1);
-}
 
