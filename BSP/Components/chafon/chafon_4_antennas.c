@@ -5,14 +5,15 @@
 
 UART_HandleTypeDef huart2;
 
-#define ANTENNA1 0x80
-#define ANTENNA2 0x81
-#define ANTENNA3 0x82
-#define ANTENNA4 0x83
+//#define ANTENNA1 0x80
+//#define ANTENNA2 0x81
+//#define ANTENNA3 0x82
+//#define ANTENNA4 0x83
 
 #define ANSWER_COMMUNICATION_SIZE 0X11
 #define EARRINGS_DATA_SIZE 0X15
 #define END_PACK_DATA_SIZE 0X07
+
 
 
 uint8_t INIT_COMMUNICATION_CHAFON[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
@@ -25,7 +26,7 @@ bool recieverFlag = 0;
 uint8_t data[500] = {};
 uint8_t earring[100] = {};
 uint8_t verification_buffer[18] = {};
-uint8_t reciverBuffer[];
+uint8_t reciverBuffer[1];
 
 uint16_t lastEarring = 0;
 uint16_t contbyte = 0;
@@ -42,9 +43,11 @@ Model_earrings earrings[200];
 
 
 static void init_Communication();
-void Chafon_Init_GPIO(void);
-void verification_Comunication_Buffer();
-void uart_callback();
+static void Chafon_Init_GPIO(void);
+static void verification_Comunication_Buffer();
+static void data_Validation();
+
+
 
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 {
@@ -117,20 +120,24 @@ void init_Communication()
 {
 	HAL_UART_Transmit(&huart2,(uint8_t *)INIT_COMMUNICATION_CHAFON, INIT_COMMUNICATION_CHAFON[0]+1,100);
 	HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
+	data_Validation();
 
 }
 
 void getEarrings()
 {
-	data_Validation();
+
+
 }
 
-void data_request_chafon()
+void data_request_chafon(ANTENNAS antenna)
 {
-	DATA_REQUEST[6] = ANTENNA2;
 
+	DATA_REQUEST[6] = antenna;
 	HAL_UART_Transmit(&huart2, (uint8_t *)DATA_REQUEST, DATA_REQUEST[0]+1, 100);
+
 }
+
 void data_Validation()
 {
 	if(!verificationFlag)
@@ -142,6 +149,7 @@ void data_Validation()
 		{
 			memcpy(earrings[lastEarring++].N_TAG, &data[8], 12);
 			communicationValidationFlag = 0;
+
 		}else if(cleanBuffFlag)
 			{
 				memset(data, 0 , data[0]+1);
@@ -163,7 +171,6 @@ void verification_Comunication_Buffer()
 		memset(data, 0 , data[0]+1);
 		recieverFlag = 1;
 		verificationFlag = 1;
-		data_request_chafon();
 
 	}
 	else if(memcmp(verification_buffer,CHAFON_ANSWER,CHAFON_ANSWER[0]+1) != 0)

@@ -5,8 +5,12 @@
 #define EARRING_SIZE 12
 #define PACK_SIZE 0x15
 
-
-
+typedef enum  {
+	 ANTENNA1 = 0x80,
+	 ANTENNA2,
+	 ANTENNA3,
+	 ANTENNA4
+}ANTENNAS;
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
@@ -21,9 +25,9 @@ typedef struct {
 
 extern Model_earrings earrings[200];
 
-void INIT_ReaderUART(USART_TypeDef * USART_PORT, uint32_t baudRate);
-
-void Init_Communication();
-
+void uart_callback();
+void data_request_chafon(ANTENNAS antenna);
+void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate);
+void getEarrings();
 
 #endif /*CHAFON_4_ANTENNAS_H_*/
