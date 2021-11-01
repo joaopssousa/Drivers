@@ -16,14 +16,14 @@ typedef enum  {
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 typedef struct {
 
-	char N_TAG[100];
+	char N_TAG[12];
 	int time[3];
 	int date[3];
 
 } Model_earrings;
 #pragma pack(pop)
 
-extern Model_earrings earrings[200];
+extern Model_earrings earrings[500];
 
 void uart_callback();
 void data_request_chafon(ANTENNAS antenna);

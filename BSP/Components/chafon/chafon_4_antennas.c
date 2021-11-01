@@ -39,7 +39,7 @@ bool cleanBuffFlag = 0;
 bool requestFlag = 0;
 bool verificationFlag = 0;
 
-Model_earrings earrings[200];
+Model_earrings earrings[500];
 
 
 static void init_Communication();
@@ -124,10 +124,10 @@ void init_Communication()
 
 }
 
-void getEarrings()
+void getEarrings(Model_TAG *earring)
 {
-
-
+	if(last_count >0 )
+		memcpy(earring->N_TAG, earrings[count_atual].N_TAG, 12);
 }
 
 void data_request_chafon(ANTENNAS antenna)
