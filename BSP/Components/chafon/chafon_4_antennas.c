@@ -124,10 +124,10 @@ void init_Communication()
 
 }
 
-void getEarrings(Model_TAG *earring)
+void getEarrings(Model_earrings *earring)
 {
-	if(last_count >0 )
-		memcpy(earring->N_TAG, earrings[count_atual].N_TAG, 12);
+//	if(last_count >0 )
+//		memcpy(earring->N_TAG, earrings[count_atual].N_TAG, 12);
 }
 
 void data_request_chafon(ANTENNAS antenna)
