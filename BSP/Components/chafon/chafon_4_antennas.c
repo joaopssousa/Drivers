@@ -18,24 +18,25 @@ UART_HandleTypeDef huart2;
 
 uint8_t INIT_COMMUNICATION_CHAFON[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
 uint8_t	DATA_REQUEST[] = {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0x23};
-uint8_t	CHAFON_ANSWER[] = {	0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31,
-							0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
+uint8_t	CHAFON_ANSWER[] = {	0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31, 0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
 
+
+
+bool communicationValidationFlag = 0;
+bool cleanBuffFlag = 0;
+uint8_t reciverBuffer[1];
+uint8_t data[500] = {};
+uint16_t contbyte = 0;
 bool recieverFlag = 0;
 
-uint8_t data[500] = {};
 uint8_t earring[100] = {};
 uint8_t verification_buffer[18] = {};
-uint8_t reciverBuffer[1];
 
 uint16_t lastEarring = 0;
-uint16_t contbyte = 0;
 uint16_t contarray = 0;
 uint16_t numberOfEarrings = 0;
 uint16_t change = 0;
 
-bool communicationValidationFlag = 0;
-bool cleanBuffFlag = 0;
 bool requestFlag = 0;
 bool verificationFlag = 0;
 
@@ -67,8 +68,6 @@ void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 	init_Communication();
 	//initReciver();
 
-
-
 }
 
 void Chafon_Init_GPIO(void)
@@ -93,27 +92,14 @@ void Chafon_Init_GPIO(void)
   HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	uart_callback();
-}
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//	uart_callback();
+//}
 void uart_callback()
 {
-	data[contbyte++] =  *reciverBuffer;
-	if(contbyte == data[0]+1 && data[0] == ANSWER_COMMUNICATION_SIZE)
-	{
-		contbyte = 0;
-	}
-	else if(contbyte == data[0]+1 && data[0] == EARRINGS_DATA_SIZE)
-	{
-		communicationValidationFlag = 1;
-		contbyte = 0;
-	}else if(contbyte == data[0]+1 && data[0] == END_PACK_DATA_SIZE)
-	{
-		cleanBuffFlag = 1;
-		contbyte = 0;
-	}
-	HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
+
+	//HAL_UART_Receive_IT(&huart2, reciverBuffer,1);
 }
 
 void init_Communication()
@@ -132,25 +118,46 @@ void getEarrings(Model_earrings *earring)
 
 void data_request_chafon(ANTENNAS antenna)
 {
+	if(antenna == 0x80)
+	{
+		DATA_REQUEST[8] = 0xdd;
+		DATA_REQUEST[9] = 0x23;
+
+	}else if(antenna == 0x81)
+	{
+		DATA_REQUEST[8] = 0x05;
+		DATA_REQUEST[9] = 0x3a;
+
+	}else if(antenna == 0x82)
+	{
+		DATA_REQUEST[8] = 0x6d;
+		DATA_REQUEST[9] = 0x10;
+
+	}else if(antenna == 0x83)
+	{
+		DATA_REQUEST[8] = 0xb5;
+		DATA_REQUEST[9] = 0x09;
+	}
 
 	DATA_REQUEST[6] = antenna;
+
 	HAL_UART_Transmit(&huart2, (uint8_t *)DATA_REQUEST, DATA_REQUEST[0]+1, 100);
 
 }
 
 void data_Validation()
 {
-	if(!verificationFlag)
+	if(!verificationFlag  && data[0] == ANSWER_COMMUNICATION_SIZE)
 		verification_Comunication_Buffer();
 
-	if(recieverFlag)
+	if(recieverFlag && data[0] == EARRINGS_DATA_SIZE)
 	{
 		if(communicationValidationFlag)
 		{
 			memcpy(earrings[lastEarring++].N_TAG, &data[8], 12);
 			communicationValidationFlag = 0;
 
-		}else if(cleanBuffFlag)
+		}else if(cleanBuffFlag  && data[0] == END_PACK_DATA_SIZE)
 			{
 				memset(data, 0 , data[0]+1);
 				cleanBuffFlag = 0;
@@ -177,7 +184,7 @@ void verification_Comunication_Buffer()
 	{
 
 		//PRINTF("communication fail chafon \n");
-		recieverFlag = 0;
+//		recieverFlag = 0;
 
 
 	}

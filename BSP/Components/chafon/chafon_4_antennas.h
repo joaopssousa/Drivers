@@ -5,6 +5,14 @@
 #define EARRING_SIZE 12
 #define PACK_SIZE 0x15
 
+
+extern bool communicationValidationFlag;
+extern bool cleanBuffFlag;
+extern uint8_t reciverBuffer[1];
+extern uint8_t data[500];
+extern uint16_t contbyte;
+extern bool recieverFlag;
+
 typedef enum  {
 	 ANTENNA1 = 0x80,
 	 ANTENNA2,
