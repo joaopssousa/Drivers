@@ -177,27 +177,29 @@ int ble_handler(uint8_t *message)
 {
 	uint8_t sizeofEarring;
 	uint8_t initialPosition;
+
+
 	switch (message[1]) {
 #if (DEVICE_TYPE == CURRAL)
 		case REQUEST_CONNECTION:
 			/*
 			 * 	Pedido de Conexão
 			 */
-			if(flags_ble.connection == SET)
-			{
+//			if(flags_ble.connection == SET)
+//			{
 				PRINTF("Recebeu Start\r\n");
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
 				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONNECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
 			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
 			  	flags_ble.start = SET;
-			}
-			else
-			{
+//			}
+//			else
+//			{
 				// TODO Testar se a quebra de conexão continua travando e como ajeitar
-				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
-				flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
-				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
-			}
+//				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
+//				flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
+//				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
+//			}
 
 			break;
 		case TAG_CONFIRMATION:
