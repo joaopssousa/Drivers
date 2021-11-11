@@ -48,7 +48,7 @@ uint8_t	CHAFON_ANSWER[]				= {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x
 
 uint8_t reciver_buffer[1];
 uint8_t data[EARRINGS_MAX_SIZE] = {};
-uint8_t verification_buffer[19] = {};
+uint8_t verification_buffer[21] = {};
 
 uint16_t last_earring = 0;
 uint16_t earring_current = 0;
@@ -113,11 +113,10 @@ void init_Communication()
 
 uint16_t get_Earrings(Model_earrings *earring)
 {
-	if(last_earring >0 && check_earring_size() )
+	if(last_earring > 0 && check_earring_size() )
 	{
-		memcpy(earring->N_TAG, &earrings[number_earrings].N_TAG, EARRING_SIZE);
+		memcpy(earring->N_TAG, &earrings[number_earrings++].N_TAG, EARRING_SIZE);
 		PRINTF("%d", number_earrings);
-		number_earrings++;
 		return 1;
 	}
 	return 0;
@@ -125,8 +124,10 @@ uint16_t get_Earrings(Model_earrings *earring)
 
 static uint16_t check_earring_size()
 {
-	if(number_earrings < last_earring)
+	if(number_earrings < last_earring){
 		return 1;
+	}
+
 	else
 	{
 		number_earrings = 0;
@@ -145,7 +146,7 @@ void data_request_chafon(ANTENNAS antenna)
 
 void data_Validation()
 {
-	memcpy(verification_buffer,data,19);
+	memcpy(verification_buffer,data,21);
 
 	if(!verification_flag && data[0] == ANSWER_COMMUNICATION_SIZE)
 	{
