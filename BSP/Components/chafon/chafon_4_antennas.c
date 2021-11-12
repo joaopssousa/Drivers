@@ -59,7 +59,7 @@ bool verification_flag = 0;
 bool communication_validation_flag = 0;
 bool reciever_flag = 0;
 
-Model_earrings earrings[500];
+Model_earrings earrings[EARRINGS_MAX_SIZE] = {};
 
 static void chafon_init_GPIO(void);
 static void verification_Comunication_Buffer();
@@ -115,8 +115,8 @@ uint16_t get_Earrings(Model_earrings *earring)
 {
 	if(last_earring > 0 && check_earring_size() )
 	{
-		memcpy(earring->N_TAG, &earrings[number_earrings++].N_TAG, EARRING_SIZE);
-		PRINTF("%d", number_earrings);
+		memcpy(earring->N_TAG, &earrings[number_earrings].N_TAG, EARRING_SIZE);
+		//PRINTF("(%d) ", number_earrings);
 		return 1;
 	}
 	return 0;
