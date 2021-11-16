@@ -130,6 +130,7 @@ static uint16_t check_earring_size()
 
 	else
 	{
+		PRINTF("\n-----ZEROU------(%d)(%d)",number_earrings,last_earring);
 		number_earrings = 0;
 		last_earring = 0;
 		return 0;
@@ -141,7 +142,6 @@ void data_request_chafon(ANTENNAS antenna)
 	DATA_REQUEST[6] = antenna;
 	ANTENNA_CRC(antenna, DATA_REQUEST[8],DATA_REQUEST[9]);
 	HAL_UART_Transmit(&huart2, (uint8_t *)DATA_REQUEST, DATA_REQUEST[0]+1, 100);
-
 }
 
 void data_Validation()
@@ -155,10 +155,13 @@ void data_Validation()
 
 	if(reciever_flag && communication_validation_flag && verification_buffer[0] == EARRINGS_DATA_SIZE )
 	{
-		memcpy(earrings[last_earring++].N_TAG, &verification_buffer[7], EARRING_SIZE);
+		memcpy(earrings[last_earring].N_TAG, &verification_buffer[7], EARRING_SIZE);
+		PRINTF("\n-----last: (%d)",last_earring);
 		communication_validation_flag = 0;
+		last_earring++;
 		if(last_earring == EARRINGS_MAX_SIZE)
 			last_earring = EARRINGS_MAX_SIZE - 1;
+
 	}
 
 
@@ -175,7 +178,7 @@ static void verification_Comunication_Buffer()
 		reciever_flag = 1;
 		verification_flag = 1;
 	}else
-		PRINTF("\n communication fail CHAFON \n");
+		PRINTF("\n Communication Fail CHAFON \n");
 }
 
 
