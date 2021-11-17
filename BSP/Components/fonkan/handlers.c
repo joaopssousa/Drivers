@@ -187,7 +187,7 @@ int ble_handler(uint8_t *message)
 			 */
 			if(flags_ble.connection == SET)
 			{
-				PRINTF("Recebeu Start\r\n");
+				//PRINTF("Recebeu Start\r\n");
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
 				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONNECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
 			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID

@@ -5,10 +5,6 @@
 
 UART_HandleTypeDef huart2;
 
-//#define ANTENNA1 0x80
-//#define ANTENNA2 0x81
-//#define ANTENNA3 0x82
-//#define ANTENNA4 0x83
 
 #define ANSWER_COMMUNICATION_SIZE 0X11
 #define EARRINGS_DATA_SIZE		  0X15
@@ -60,6 +56,7 @@ bool communication_validation_flag = 0;
 bool reciever_flag = 0;
 
 Model_earrings earrings[EARRINGS_MAX_SIZE] = {};
+Model_earrings earrings_ascii;
 
 static void chafon_init_GPIO(void);
 static void verification_Comunication_Buffer();
@@ -104,6 +101,25 @@ static void chafon_init_GPIO(void)
   HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
+//unsigned char nibble_to_ascii(unsigned char c){
+//    if((c>=0)&&(c<=9)){
+//        return (c+=48);
+//    }
+//    else{
+//        return (c+=55);
+//    }
+//}
+//
+//int hex_to_ascii(unsigned char *buffer_out, unsigned char *buffer_in, int tamanho){
+//    int j=0;
+//    for(int i=0; i<(tamanho);i++)
+//    {
+//        buffer_out[j] = nibble_to_ascii((buffer_in[i]&0xF0)>>4);
+//        buffer_out[j+1] = nibble_to_ascii(buffer_in[i]&0x0F);
+//        j+=2;
+//    }
+//    return 0;
+//}
 
 void init_Communication()
 {
@@ -116,7 +132,17 @@ uint16_t get_Earrings(Model_earrings *earring)
 	if(last_earring > 0 && check_earring_size() )
 	{
 		memcpy(earring->N_TAG, &earrings[number_earrings].N_TAG, EARRING_SIZE);
-		//PRINTF("(%d) ", number_earrings);
+		return 1;
+	}
+	return 0;
+}
+
+uint16_t get_earrings_ascii(Model_earrings *earring)
+{
+	if(last_earring > 0 && check_earring_size() )
+	{
+		hex_to_ascii(&earrings_ascii,&earrings[number_earrings].N_TAG, EARRING_SIZE);
+		memcpy(earring->N_TAG, &earrings_ascii.N_TAG, EARRING_SIZE);
 		return 1;
 	}
 	return 0;
@@ -130,7 +156,7 @@ static uint16_t check_earring_size()
 
 	else
 	{
-		PRINTF("\n-----ZEROU------(%d)(%d)",number_earrings,last_earring);
+		PRINTF("\n-----ZEROU------(%d)(%d)\n",number_earrings,last_earring);
 		number_earrings = 0;
 		last_earring = 0;
 		return 0;
@@ -146,9 +172,9 @@ void data_request_chafon(ANTENNAS antenna)
 
 void data_Validation()
 {
-	memcpy(verification_buffer,data,21);
+	memcpy(verification_buffer,data,EARRINGS_DATA_SIZE);
 
-	if(!verification_flag && data[0] == ANSWER_COMMUNICATION_SIZE)
+	if(!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE)
 	{
 		verification_Comunication_Buffer();
 	}
@@ -161,15 +187,16 @@ void data_Validation()
 		last_earring++;
 		if(last_earring == EARRINGS_MAX_SIZE)
 			last_earring = EARRINGS_MAX_SIZE - 1;
+		memset(data,0,EARRING_SIZE);
+		memset(verification_buffer,0,EARRING_SIZE);
 
 	}
-
 
 }
 
 static void verification_Comunication_Buffer()
 {
-	memcpy(verification_buffer,data,19);
+	//memcpy(verification_buffer,data,19);
 
 	if(verification_buffer[0] == 0x11 && memcmp(verification_buffer,CHAFON_ANSWER,CHAFON_ANSWER[0]+1) == 0)
 	{
