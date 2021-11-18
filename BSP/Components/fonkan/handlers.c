@@ -223,6 +223,7 @@ int ble_handler(uint8_t *message)
 			HAL_UART_Transmit(&huart1, (uint8_t *) answer_end_connection, 3, 100);
 			if (flags_ble.start == SET)
 			{
+				PRINTF("====>   START = RESET \r\n");
 				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
 				flags_ble.start = RESET;				// Reseta a flag de inicio da comunicação
 				//clear_buffers();

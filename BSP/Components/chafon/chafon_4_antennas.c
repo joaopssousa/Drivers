@@ -44,11 +44,11 @@ uint8_t	CHAFON_ANSWER[]				= {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x
 
 uint8_t reciver_buffer[1];
 uint8_t data[EARRINGS_MAX_SIZE] = {};
-uint8_t verification_buffer[21] = {};
+//uint8_t verification_buffer[21] = {};
 
-uint16_t last_earring = 0;
+int last_earring = -1;
 uint16_t earring_current = 0;
-uint16_t number_earrings = 0;
+int number_earrings = -1;
 uint16_t count_byte = 0;
 
 bool verification_flag = 0;
@@ -60,7 +60,7 @@ Model_earrings earrings_ascii;
 
 static void chafon_init_GPIO(void);
 static void verification_Comunication_Buffer();
-static uint16_t check_earring_size();
+static uint8_t check_earring_size();
 
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 {
@@ -127,38 +127,39 @@ void init_Communication()
 	HAL_UART_Transmit(&huart2,(uint8_t *)INIT_COMMUNICATION_CHAFON, INIT_COMMUNICATION_CHAFON[0]+1,100);
 }
 
-uint16_t get_Earrings(Model_earrings *earring)
+uint8_t get_Earrings(Model_earrings *earring)
 {
-	if(last_earring > 0 && check_earring_size() )
+	if(check_earring_size() )
 	{
 		memcpy(earring->N_TAG, &earrings[number_earrings].N_TAG, EARRING_SIZE);
+
 		return 1;
 	}
 	return 0;
 }
 
-uint16_t get_earrings_ascii(Model_earrings *earring)
+//uint8_t get_earrings_ascii(Model_earrings *earring)
+//{
+//	if(check_earring_size() &&  last_earring > 0)
+//	{
+//		//hex_to_ascii(&earrings_ascii,&earrings[number_earrings].N_TAG, EARRING_SIZE);
+//		memcpy(earring->N_TAG, &earrings_ascii.N_TAG, EARRING_SIZE);
+//
+//		return 1;
+//	}
+//	return 0;
+//}
+
+static uint8_t check_earring_size()
 {
-	if(last_earring > 0 && check_earring_size() )
-	{
-		hex_to_ascii(&earrings_ascii,&earrings[number_earrings].N_TAG, EARRING_SIZE);
-		memcpy(earring->N_TAG, &earrings_ascii.N_TAG, EARRING_SIZE);
+	if(last_earring > -1 && last_earring >= number_earrings){
 		return 1;
 	}
-	return 0;
-}
-
-static uint16_t check_earring_size()
-{
-	if(number_earrings < last_earring){
-		return 1;
-	}
-
 	else
 	{
 		PRINTF("\n-----ZEROU------(%d)(%d)\n",number_earrings,last_earring);
 		number_earrings = 0;
-		last_earring = 0;
+		last_earring = -1;
 		return 0;
 	}
 }
@@ -172,38 +173,41 @@ void data_request_chafon(ANTENNAS antenna)
 
 void data_Validation()
 {
+	uint8_t verification_buffer[EARRINGS_DATA_SIZE];
 	memcpy(verification_buffer,data,EARRINGS_DATA_SIZE);
-
+//	for(int i = 0; i < data[0]+1; i++)
+//		PRINTF("(%x) ",verification_buffer[i]);
+//	PRINTF("\n");
 	if(!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE)
 	{
-		verification_Comunication_Buffer();
+		verification_Comunication_Buffer(verification_buffer);
 	}
 
 	if(reciever_flag && communication_validation_flag && verification_buffer[0] == EARRINGS_DATA_SIZE )
 	{
-		memcpy(earrings[last_earring].N_TAG, &verification_buffer[7], EARRING_SIZE);
+
+		memcpy(earrings[++last_earring].N_TAG, &verification_buffer[7], EARRING_SIZE);
 		PRINTF("\n-----last: (%d)",last_earring);
 		communication_validation_flag = 0;
-		last_earring++;
-		if(last_earring == EARRINGS_MAX_SIZE)
-			last_earring = EARRINGS_MAX_SIZE - 1;
-		memset(data,0,EARRING_SIZE);
-		memset(verification_buffer,0,EARRING_SIZE);
+		if(last_earring == EARRINGS_MAX_SIZE){
+			last_earring = EARRINGS_MAX_SIZE - 2;
+		}
 
 	}
 
 }
 
-static void verification_Comunication_Buffer()
+static void verification_Comunication_Buffer(uint8_t verification_buffer[EARRINGS_DATA_SIZE])
 {
 	//memcpy(verification_buffer,data,19);
 
 	if(verification_buffer[0] == 0x11 && memcmp(verification_buffer,CHAFON_ANSWER,CHAFON_ANSWER[0]+1) == 0)
 	{
 		communication_validation_flag = 1;
-		PRINTF("Successful Communication CHAFON \r\n");
 		reciever_flag = 1;
 		verification_flag = 1;
+		PRINTF("Successful Communication CHAFON \r\n");
+
 	}else
 		PRINTF("\n Communication Fail CHAFON \n");
 }

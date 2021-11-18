@@ -6,7 +6,7 @@ extern bool communication_validation_flag;
 extern uint8_t reciver_buffer[1];
 extern uint8_t data[500];
 extern uint16_t count_byte;
-extern uint16_t number_earrings;
+extern int number_earrings;
 extern bool reciever_flag;
 
 typedef enum  {
@@ -34,7 +34,7 @@ extern Model_earrings earrings[500];
 void uart_callback();
 void data_request_chafon(ANTENNAS antenna);
 void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate);
-uint16_t get_Earrings();
+uint8_t get_Earrings();
 void init_Communication();
 void data_Validation();
 
