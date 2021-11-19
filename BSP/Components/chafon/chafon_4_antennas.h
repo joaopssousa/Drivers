@@ -2,12 +2,20 @@
 #define CHAFON_4_ANTENNAS_H_
 #include "hw.h"
 
+
+#define EARRING_SIZE			  12
+#define EARRINGS_MAX_SIZE		  50
+#define DATA_MAX_SIZE		  	  100
+
 extern bool communication_validation_flag;
 extern uint8_t reciver_buffer[1];
-extern uint8_t data[500];
+extern uint8_t data[DATA_MAX_SIZE];
 extern uint16_t count_byte;
 extern int number_earrings;
 extern bool reciever_flag;
+extern uint8_t send_flag;
+extern uint8_t count_send_flag;
+
 
 typedef enum  {
 	 ANTENNA1 = 0x80,
@@ -22,14 +30,14 @@ typedef enum  {
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 typedef struct {
 
-	char N_TAG[12];
+	char N_TAG[EARRING_SIZE];
 	int time[3];
 	int date[3];
 
 } Model_earrings;
 #pragma pack(pop)
 
-extern Model_earrings earrings[500];
+extern Model_earrings earrings[EARRINGS_MAX_SIZE];
 
 void uart_callback();
 void data_request_chafon(ANTENNAS antenna);

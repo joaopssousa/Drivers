@@ -10,27 +10,24 @@ UART_HandleTypeDef huart2;
 #define EARRINGS_DATA_SIZE		  0X15
 #define END_PACK_DATA_SIZE		  0X07
 
-#define EARRING_SIZE			  12
-#define EARRINGS_MAX_SIZE		  500
-
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
-    switch(ANT){             \
-    case 0x80:               \
-        CRC1 = 0xdd;     	 \
-        CRC2 = 0x23;    	 \
-    break;  			     \
-    case 0x81:         		 \
-        CRC1 = 0x05;   	 	 \
-        CRC2 = 0x3a;    	 \
-    break;  				 \
-    case 0x82: 				 \
-        CRC1 = 0x6d;   	   	 \
-        CRC2 = 0x10;   		 \
-    break;  				 \
-    case 0x83: 				 \
-        CRC1 = 0xb5;  		 \
-        CRC2 = 0x09;    	 \
-    break;  				 \
+    switch(ANT){             		 \
+    case 0x80:              		 \
+        CRC1 = 0xdd;     			 \
+        CRC2 = 0x23;    			 \
+    break;  			  		     \
+    case 0x81:         				 \
+        CRC1 = 0x05;   	 			 \
+        CRC2 = 0x3a;    			 \
+    break;  						 \
+    case 0x82: 						 \
+        CRC1 = 0x6d;   	   			 \
+        CRC2 = 0x10;   				 \
+    break;  						 \
+    case 0x83: 						 \
+        CRC1 = 0xb5;  				 \
+        CRC2 = 0x09;    			 \
+    break;  						 \
     }
 
 
@@ -43,13 +40,15 @@ uint8_t	CHAFON_ANSWER[]				= {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x
 									   0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
 
 uint8_t reciver_buffer[1];
-uint8_t data[EARRINGS_MAX_SIZE] = {};
+uint8_t data[DATA_MAX_SIZE] = {};
 //uint8_t verification_buffer[21] = {};
 
 int last_earring = -1;
 uint16_t earring_current = 0;
-int number_earrings = -1;
+int number_earrings = 0;
 uint16_t count_byte = 0;
+uint8_t send_flag = 0;
+uint8_t count_send_flag = 0;
 
 bool verification_flag = 0;
 bool communication_validation_flag = 0;
@@ -189,7 +188,7 @@ void data_Validation()
 		memcpy(earrings[++last_earring].N_TAG, &verification_buffer[7], EARRING_SIZE);
 		PRINTF("\n-----last: (%d)",last_earring);
 		communication_validation_flag = 0;
-		if(last_earring == EARRINGS_MAX_SIZE){
+		if(last_earring == EARRINGS_MAX_SIZE-1){
 			last_earring = EARRINGS_MAX_SIZE - 2;
 		}
 
