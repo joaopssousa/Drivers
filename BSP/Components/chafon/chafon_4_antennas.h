@@ -4,7 +4,7 @@
 
 
 #define EARRING_SIZE			  12
-#define EARRINGS_MAX_SIZE		  50
+#define EARRINGS_MAX_SIZE		  500
 #define DATA_MAX_SIZE		  	  100
 
 extern bool communication_validation_flag;
@@ -24,7 +24,8 @@ typedef enum  {
 	 ANTENNA4 = 0x83
 }ANTENNAS;
 
-
+extern uint8_t flag_recebe;
+extern uint8_t flag_data_comuniation;
 
 #pragma pack(push)  /* push current alignment to stack  */
 #pragma pack(1)     /* set alignment to 1 byte boundary */

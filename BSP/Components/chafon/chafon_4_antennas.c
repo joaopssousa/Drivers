@@ -4,7 +4,8 @@
 
 
 UART_HandleTypeDef huart2;
-
+uint8_t flag_recebe =0;
+uint8_t flag_data_comuniation =0;
 
 #define ANSWER_COMMUNICATION_SIZE 0X11
 #define EARRINGS_DATA_SIZE		  0X15
@@ -172,27 +173,32 @@ void data_request_chafon(ANTENNAS antenna)
 
 void data_Validation()
 {
+	flag_recebe = 1;
+
 	uint8_t verification_buffer[EARRINGS_DATA_SIZE];
 	memcpy(verification_buffer,data,EARRINGS_DATA_SIZE);
-//	for(int i = 0; i < data[0]+1; i++)
-//		PRINTF("(%x) ",verification_buffer[i]);
-//	PRINTF("\n");
+	for(int i = 0; i < data[0]+1; i++)
+		PRINTF("(%x) ",data[i]);
+	PRINTF("\n");
 	if(!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE)
 	{
 		verification_Comunication_Buffer(verification_buffer);
+		flag_recebe = 0;
 	}
 
 	if(reciever_flag && communication_validation_flag && verification_buffer[0] == EARRINGS_DATA_SIZE )
 	{
 
 		memcpy(earrings[++last_earring].N_TAG, &verification_buffer[7], EARRING_SIZE);
-		PRINTF("\n-----last: (%d)",last_earring);
+		PRINTF("\n last: (%d)",last_earring);
+		memset(verification_buffer, 0, sizeof(verification_buffer));
 		communication_validation_flag = 0;
 		if(last_earring == EARRINGS_MAX_SIZE-1){
 			last_earring = EARRINGS_MAX_SIZE - 2;
 		}
 
 	}
+	flag_recebe = 0;
 
 }
 
