@@ -3,9 +3,15 @@
 #include "hw.h"
 
 
-#define EARRING_SIZE			  12
-#define EARRINGS_MAX_SIZE		  500
-#define DATA_MAX_SIZE		  	  100
+#define EARRING_SIZE			  	12
+#define EARRINGS_MAX_SIZE		  	500
+#define DATA_MAX_SIZE		  	  	200
+#define ANSWER_COMMUNICATION_SIZE 	0X11
+#define TAGS_DATA_SIZE		  	  	0X15
+#define END_PACK_DATA_SIZE		  	0X07
+#define EARRING_START_BYTE		  	7
+#define PACKAGE_SIZE			  	6
+#define TAG_IDENTIFIER_INDEX	  	0
 
 extern bool communication_validation_flag;
 extern uint8_t reciver_buffer[1];
