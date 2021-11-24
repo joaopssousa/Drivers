@@ -52,7 +52,7 @@ typedef union
 		  active_irradiator : 1,		/* 1: Irradiador presente */
           receive_measure_irrad : 1, 	/* 1: Recebeu uma medida válida do Medidor de irradiacao */
 		  read_sensors : 1,     		/* 1: Realiza leitura dos sensores */
-          spare3 : 1,     		/* Unused */
+          alarm_b : 1,     				/* 1: Alarm B foi ativado */
           spare4 : 1,     		/* Unused */
           spare5 : 1;     		/* Unused */
  };

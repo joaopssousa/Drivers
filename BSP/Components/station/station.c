@@ -30,6 +30,8 @@ flags_station flagsStation;
 
 BMP280_HandleTypedef bmp280;
 
+RTC_HandleTypeDef RtcHandle;
+
 uint32_t count_velo = 0;
 uint32_t aux_count_velo = 0;
 uint16_t pluviometer_count=0;
@@ -111,10 +113,14 @@ static bool Call_BME280(Estation_Parameters *Parameters)
  */
 static void Call_Pluviometer(Estation_Parameters *Parameters)
 {
+	uint8_t tempo[6];
 
 	Parameters->pluviometria = ((double)(pluviometer_count/4))*1000;
+	pluviometer_count = read_sram_bckp(BKPSRAM_BASE+20);
 	PRINTF("Pluvi %d\r\n", pluviometer_count);
 
+	get_time_now(tempo);
+	PRINTF("%d:%d:%d\n", tempo[3], tempo[4], tempo[5]);
 }
 
 
@@ -205,6 +211,10 @@ void muda_buffer(Sensor_AppData *AppData, char Buffer_to_send[])
 
 void mede_mm_chuva(){
 	pluviometer_count++;
+	//writeBKP(pluviometer_count);
+	write_sram_bckp(pluviometer_count, BKPSRAM_BASE+20);
+	//pluviometer_count = readBKP();
+	//PRINTF("pluviometer_count: %d", pluviometer_count);
 	flagsStation.pluviometer=1;
 }
 
