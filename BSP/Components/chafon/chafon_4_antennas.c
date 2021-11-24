@@ -7,11 +7,6 @@ UART_HandleTypeDef huart2;
 uint8_t flag_recebe =0;
 uint8_t flag_data_comuniation =0;
 
-#define ANSWER_COMMUNICATION_SIZE 0X11
-#define TAGS_DATA_SIZE		  	  0X15
-#define END_PACK_DATA_SIZE		  0X07
-#define EARRING_START_BYTE		  7
-#define PACKAGE_SIZE			  6
 
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
     switch(ANT){             		 \
@@ -42,7 +37,7 @@ uint8_t	DATA_REQUEST[] 				= {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0x
 uint8_t	CHAFON_ANSWER[]				= {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31,
 									   0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
 
-uint8_t CHAFON_END_PACK[]			= {0X07, 0X00, 0X01, 0X01, 0X01, 0X00, 0X1e, 0X4b};
+uint8_t CHAFON_END_PACK[]			= {0x07, 0x00, 0x01, 0x01, 0x01, 0x00, 0x1e, 0x4b};
 
 uint8_t reciver_buffer[1];
 uint8_t data[DATA_MAX_SIZE] = {};
@@ -181,37 +176,54 @@ void data_request_chafon(ANTENNAS antenna)
 void data_Validation()
 {
 
-	uint8_t verification_buffer[200];
-
-	memcpy(verification_buffer[count_pack_tags+=sizeof(data)], data, TAGS_DATA_SIZE+1);
-	PRINTF("\nPACK: (%d) ",count_pack_tags);
-	for(int i = 0; i < sizeof(verification_buffer);i++)
-			{
-				PRINTF("%x",verification_buffer[i]);
-			}
-				PRINTF("\n");
+	uint8_t verification_buffer[TAGS_DATA_SIZE+1];
+	uint8_t pack_buffer[10][22];
 
 	if (!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
-		verification_Comunication_Buffer(verification_buffer);
-		flag_recebe = 0;
-		count_pack_tags = 0;
-	}
+			verification_Comunication_Buffer(verification_buffer);
+			count_pack_tags = 0;
+		}
+	memcpy(verification_buffer, data, data[0]+1);
+//	if(verification_buffer[0] != END_PACK_DATA_SIZE && verification_buffer[0] != ANSWER_COMMUNICATION_SIZE)
+//	{
+//		memcpy(&pack_buffer[count_byte_pack],verification_buffer,TAGS_DATA_SIZE+1);
+//		count_byte_pack += (TAGS_DATA_SIZE+1);
+//	}
+	PRINTF("\nPACK: (%d) ",count_pack_tags);
+	for(int i = 0; i < sizeof(verification_buffer);i++){
+				PRINTF(" %x",verification_buffer[i]);
+			}
 
-	if ( memcmp(&verification_buffer[count_pack_tags - END_PACK_DATA_SIZE+1],CHAFON_END_PACK,END_PACK_DATA_SIZE+1)) {
-		PRINTF("\nPACK: ");
-		for(int i = 0; i < sizeof(verification_buffer);i++)
+				PRINTF("\n");
+
+
+
+	if (verification_buffer[0] != END_PACK_DATA_SIZE ) {
+
+		memcpy(&pack_buffer[0][count_pack_tags],verification_buffer,TAGS_DATA_SIZE+1);
+
+		PRINTF("\ntag [%d]:",count_pack_tags);
+
+		for(int i = 0; i <= pack_buffer[count_pack_tags][0];i++)
 		{
-			PRINTF("%x",verification_buffer[i]);
+			PRINTF("%x ",pack_buffer[count_pack_tags][i]);
 		}
 			PRINTF("\n");
+
+		if(pack_buffer[count_pack_tags][0] == END_PACK_DATA_SIZE)
+			{
+				count_pack_tags = 0;
+			}else
+				count_pack_tags++;
+	}
 		//if (reciever_flag && communication_validation_flag && verification_buffer[0] == TAGS_DATA_SIZE) {
-		count_pack_tags = 7;
-		memcpy(&earrings[++last_earring].N_TAG,& verification_buffer[count_pack_tags+=9], EARRING_SIZE);
-		for(int i = 0; i < EARRING_SIZE;i++)
-				{
-					PRINTF("%x",earrings[last_earring].N_TAG[i]);
-				}
-					PRINTF("\n");
+
+		memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[7], EARRING_SIZE);
+//		for(int i = 0; i < EARRING_SIZE;i++)
+//				{
+//					PRINTF("%x ",earrings[last_earring].N_TAG[i]);
+//				}
+//					PRINTF("\n");
 		if (earring_counter == PACKAGE_SIZE - 1) {
 			earring_counter = 0;
 		}
@@ -224,7 +236,7 @@ void data_Validation()
 
 		}
 		count_pack_tags = 0;
-	}
+
 
 }
 
