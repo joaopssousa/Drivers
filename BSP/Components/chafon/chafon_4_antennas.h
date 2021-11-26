@@ -21,6 +21,7 @@ extern int number_earrings;
 extern bool reciever_flag;
 extern uint8_t send_flag;
 extern uint8_t count_send_flag;
+extern uint8_t flag_new_pack;
 
 
 typedef enum  {

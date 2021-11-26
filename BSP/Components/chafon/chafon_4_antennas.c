@@ -2,11 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
-
 UART_HandleTypeDef huart2;
-uint8_t flag_recebe =0;
-uint8_t flag_data_comuniation =0;
-
+uint8_t flag_recebe = 0;
+uint8_t flag_data_comuniation = 0;
+uint8_t flag_new_pack = 0;
 
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
     switch(ANT){             		 \
@@ -28,27 +27,26 @@ uint8_t flag_data_comuniation =0;
     break;  						 \
     }
 
+uint8_t INIT_COMMUNICATION_CHAFON[] = { 0x04, 0xFF, 0x21, 0x19, 0x95 };
 
+uint8_t DATA_REQUEST[] = { 0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd,
+		0x23 };
 
-uint8_t INIT_COMMUNICATION_CHAFON[] = {0x04, 0xFF, 0x21, 0x19, 0x95};
+uint8_t CHAFON_ANSWER[] = { 0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02,
+		0x31, 0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0 };
 
-uint8_t	DATA_REQUEST[] 				= {0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80, 0x14, 0xdd, 0x23};
-
-uint8_t	CHAFON_ANSWER[]				= {0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02, 0x31,
-									   0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0};
-
-uint8_t CHAFON_END_PACK[]			= {0x07, 0x00, 0x01, 0x01, 0x01, 0x00, 0x1e, 0x4b};
+uint8_t CHAFON_END_PACK[] = { 0x07, 0x00, 0x01, 0x01, 0x01, 0x00, 0x1e, 0x4b };
 
 uint8_t reciver_buffer[1];
-uint8_t data[DATA_MAX_SIZE] = {};
-//uint8_t verification_buffer[21] = {};
-uint8_t pack_tags[TAGS_DATA_SIZE][5] = {};
-uint16_t count_pack_tags = -1;
+uint8_t data[DATA_MAX_SIZE] = { };
+uint8_t pack_tags[TAGS_DATA_SIZE][5] = { };
+
 int last_earring = -1;
 uint16_t earring_current = 0;
 int number_earrings = 0;
 uint16_t count_byte = 0;
-uint8_t count_byte_pack =-1;
+int count_byte_pack = -1;
+int count_pack_tags = -1;
 uint8_t earring_counter = 0;
 uint8_t send_flag = 0;
 uint8_t count_send_flag = 0;
@@ -57,15 +55,14 @@ bool verification_flag = 0;
 bool communication_validation_flag = 0;
 bool reciever_flag = 0;
 
-Model_earrings earrings[EARRINGS_MAX_SIZE] = {};
+Model_earrings earrings[EARRINGS_MAX_SIZE] = { };
 Model_earrings earrings_ascii;
 
 static void chafon_init_GPIO(void);
 static void verification_Comunication_Buffer();
 static uint8_t check_earring_size();
 
-void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
-{
+void INIT_ReaderUART(USART_TypeDef *uartPort, uint32_t baudRate) {
 	huart2.Instance = uartPort;
 	huart2.Init.BaudRate = baudRate;
 	huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -74,33 +71,31 @@ void INIT_ReaderUART(USART_TypeDef * uartPort,uint32_t baudRate)
 	huart2.Init.Mode = UART_MODE_TX_RX;
 	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
 	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart2) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-	chafon_init_GPIO() ;
+	if (HAL_UART_Init(&huart2) != HAL_OK) {
+		Error_Handler();
+	}
+	chafon_init_GPIO();
 
 }
 
-static void chafon_init_GPIO(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
+static void chafon_init_GPIO(void) {
+	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
-  __HAL_RCC_USART2_CLK_ENABLE();
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  //__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_USART2_CLK_ENABLE();
+	/* GPIO Ports Clock Enable */
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	//__HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin : BLE_BRK_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	/*Configure GPIO pin : BLE_BRK_Pin */
+	GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
+	HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 //unsigned char nibble_to_ascii(unsigned char c){
@@ -123,16 +118,14 @@ static void chafon_init_GPIO(void)
 //    return 0;
 //}
 
-void init_Communication()
-{
-	HAL_UART_Receive_IT(&huart2, reciver_buffer,1);
-	HAL_UART_Transmit(&huart2,(uint8_t *)INIT_COMMUNICATION_CHAFON, INIT_COMMUNICATION_CHAFON[0]+1,100);
+void init_Communication() {
+	HAL_UART_Receive_IT(&huart2, reciver_buffer, 1);
+	HAL_UART_Transmit(&huart2, (uint8_t*) INIT_COMMUNICATION_CHAFON,
+			INIT_COMMUNICATION_CHAFON[0] + 1, 100);
 }
 
-uint8_t get_Earrings(Model_earrings *earring)
-{
-	if(check_earring_size() )
-	{
+uint8_t get_Earrings(Model_earrings *earring) {
+	if (check_earring_size()) {
 		memcpy(earring->N_TAG, &earrings[number_earrings].N_TAG, EARRING_SIZE);
 
 		return 1;
@@ -152,112 +145,79 @@ uint8_t get_Earrings(Model_earrings *earring)
 //	return 0;
 //}
 
-static uint8_t check_earring_size()
-{
-	if(last_earring > -1 && last_earring >= number_earrings){
+static uint8_t check_earring_size() {
+	if (last_earring > -1 && last_earring >= number_earrings) {
 		return 1;
-	}
-	else
-	{
-		PRINTF("\n-----ZEROU------(%d)(%d)\n",number_earrings,last_earring);
+	} else {
+		PRINTF("\n-----ZEROU------(%d)(%d)\n", number_earrings, last_earring);
 		number_earrings = 0;
 		last_earring = -1;
 		return 0;
 	}
 }
 
-void data_request_chafon(ANTENNAS antenna)
-{
+void data_request_chafon(ANTENNAS antenna) {
 	DATA_REQUEST[6] = antenna;
-	ANTENNA_CRC(antenna, DATA_REQUEST[8],DATA_REQUEST[9]);
-	HAL_UART_Transmit(&huart2, (uint8_t *)DATA_REQUEST, DATA_REQUEST[0]+1, 100);
+	ANTENNA_CRC(antenna, DATA_REQUEST[8], DATA_REQUEST[9]);
+	HAL_UART_Transmit(&huart2, (uint8_t*) DATA_REQUEST, DATA_REQUEST[0] + 1,
+			100);
 }
 
-void data_Validation()
-{
+void data_Validation() {
 
-	uint8_t verification_buffer[TAGS_DATA_SIZE+1];
-	uint8_t pack_buffer[500];
+	uint8_t verification_buffer[TAGS_DATA_SIZE + 1];
 
-	memcpy(verification_buffer, data, data[0]+1);
+	if(flag_new_pack){
+	memcpy(verification_buffer, data, data[0] + 1);
+	}
 
 	if (!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
-			verification_Comunication_Buffer(verification_buffer);
-			count_pack_tags = -1;
-		}
-//
-//	PRINTF("\nPACK(%d): ",sizeof(verification_buffer));
-//	for(int i = 0; i < verification_buffer[0] + 1;i++){
-//				PRINTF(" %x",verification_buffer[i]);
-//			}
-//				PRINTF("\n");
-
-	if (memcmp(verification_buffer, CHAFON_END_PACK ,CHAFON_END_PACK[0] + 1) == 0) {
-//		PRINTF("\nTags:\n");
-//		for (int i = 0; i < count_pack_tags; i++) {
-//			for (int j = 0; j <= TAGS_DATA_SIZE; j++) {
-//				PRINTF(" %x",pack_buffer[i][j]);
-//			}
-//			PRINTF("\n");
-//		}
-//		PRINTF("\n");
-
-		++count_byte_pack;
-		if (reciever_flag && communication_validation_flag && &pack_buffer[count_byte_pack * (TAGS_DATA_SIZE+1)] == TAGS_DATA_SIZE) {
-
-				memcpy(&earrings[++last_earring].N_TAG, &pack_buffer[(count_byte_pack * (TAGS_DATA_SIZE+1)) + 7], EARRING_SIZE);
-				PRINTF("Brinco: ");
-				for(int i = 0; i < EARRING_SIZE;i++)
-						{
-							PRINTF("%x ",earrings[last_earring].N_TAG[i]);
-						}
-							PRINTF("\n");
-				if (earring_counter == PACKAGE_SIZE - 1) {
-					earring_counter = 0;
-				}
-				PRINTF("\n last: (%d)", last_earring);
-				communication_validation_flag = 0;
-
-				if (last_earring == EARRINGS_MAX_SIZE - 1) {
-					last_earring = EARRINGS_MAX_SIZE - 2;
-					}
-
-				}
-		if(count_byte_pack == count_pack_tags )
-		{
-			count_byte_pack = -1;
-			count_pack_tags = -1;
-		}
-
-
-	} else {
-
-		memcpy(&pack_buffer[++count_pack_tags*(TAGS_DATA_SIZE+1)], verification_buffer,verification_buffer[0] + 1);
-//		PRINTF("\nmem:[%d]",count_pack_tags);
-//		for (int j = 0; j <= TAGS_DATA_SIZE; j++) {
-//						PRINTF(" %x",pack_buffer[count_pack_tags][j]);
-//					}
-
+		verification_Comunication_Buffer(verification_buffer);
+		flag_new_pack = 0;
 	}
 
 
+	if (reciever_flag && communication_validation_flag && verification_buffer[++count_byte_pack*(TAGS_DATA_SIZE+1)] == TAGS_DATA_SIZE) {
 
+		memcpy(&earrings[++last_earring].N_TAG,	&verification_buffer[(count_byte_pack*22)+7], EARRING_SIZE);
+
+		PRINTF("Brinco: ");
+
+		for (int i = 0; i < EARRING_SIZE; i++) {
+			PRINTF("%x ", earrings[last_earring].N_TAG[i]);
+		}
+		PRINTF("\n");
+		if (earring_counter == PACKAGE_SIZE - 1) {
+			earring_counter = 0;
+		}
+		PRINTF("\n last: (%d)", last_earring);
+		communication_validation_flag = 0;
+
+		if (last_earring == EARRINGS_MAX_SIZE - 1) {
+			last_earring = EARRINGS_MAX_SIZE - 2;
+		}
+
+	}else if(verification_buffer[count_byte_pack*(TAGS_DATA_SIZE+1)] == 0)
+	{
+		flag_new_pack = 0;
+		count_byte_pack = 0;
+	}
 
 }
 
-static void verification_Comunication_Buffer(uint8_t verification_buffer[TAGS_DATA_SIZE])
-{
+static void verification_Comunication_Buffer(
+		uint8_t verification_buffer[TAGS_DATA_SIZE]) {
 	//memcpy(verification_buffer,data,19);
 
-	if(verification_buffer[0] == 0x11 && memcmp(verification_buffer,CHAFON_ANSWER,CHAFON_ANSWER[0]+1) == 0)
-	{
+	if (verification_buffer[0] == 0x11
+			&& memcmp(verification_buffer, CHAFON_ANSWER, CHAFON_ANSWER[0] + 1)
+					== 0) {
 		communication_validation_flag = 1;
 		reciever_flag = 1;
 		verification_flag = 1;
 		PRINTF("Successful Communication CHAFON \r\n");
 
-	}else
+	} else
 		PRINTF("\n Communication Fail CHAFON \n");
 }
-
 
