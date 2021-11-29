@@ -6,6 +6,7 @@ UART_HandleTypeDef huart2;
 uint8_t flag_recebe = 0;
 uint8_t flag_data_comuniation = 0;
 uint8_t flag_new_pack = 0;
+uint8_t count_pack = 0;
 
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
     switch(ANT){             		 \
@@ -162,45 +163,67 @@ void data_request_chafon(ANTENNAS antenna) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) DATA_REQUEST, DATA_REQUEST[0] + 1,
 			100);
 }
-
+uint8_t buffer[500];
 void data_Validation() {
 
-	uint8_t verification_buffer[TAGS_DATA_SIZE + 1];
+	uint8_t verification_buffer[500];
 
-	if(flag_new_pack){
-	memcpy(verification_buffer, data, data[0] + 1);
-	}
+	if (flag_new_pack) {
+		memcpy(verification_buffer, data, data[0] + 1);
 
-	if (!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
-		verification_Comunication_Buffer(verification_buffer);
-		flag_new_pack = 0;
-	}
-
-
-	if (reciever_flag && communication_validation_flag && verification_buffer[++count_byte_pack*(TAGS_DATA_SIZE+1)] == TAGS_DATA_SIZE) {
-
-		memcpy(&earrings[++last_earring].N_TAG,	&verification_buffer[(count_byte_pack*22)+7], EARRING_SIZE);
-
-		PRINTF("Brinco: ");
-
-		for (int i = 0; i < EARRING_SIZE; i++) {
-			PRINTF("%x ", earrings[last_earring].N_TAG[i]);
-		}
-		PRINTF("\n");
-		if (earring_counter == PACKAGE_SIZE - 1) {
-			earring_counter = 0;
-		}
-		PRINTF("\n last: (%d)", last_earring);
-		communication_validation_flag = 0;
-
-		if (last_earring == EARRINGS_MAX_SIZE - 1) {
-			last_earring = EARRINGS_MAX_SIZE - 2;
+//		for (int i = 0; i <= verification_buffer[0]; i++) {
+//			PRINTF("%x ", verification_buffer[i]);
+//		}
+		if (!verification_flag
+				&& verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
+			verification_Comunication_Buffer(verification_buffer);
+			flag_new_pack = 0;
+			count_pack = 0;
 		}
 
-	}else if(verification_buffer[count_byte_pack*(TAGS_DATA_SIZE+1)] == 0)
-	{
-		flag_new_pack = 0;
-		count_byte_pack = 0;
+		if (memcmp(verification_buffer, CHAFON_END_PACK, END_PACK_DATA_SIZE + 1)
+				!= 0 && verification_buffer[0] != 0x11) {
+
+			memcpy(&buffer[count_pack * 22], verification_buffer,
+					verification_buffer[0] + 1);
+			for (int i = 0; i <= (count_pack * 22); i++) {
+				PRINTF("%x ", buffer[i]);
+			}
+			PRINTF("endPACK\n");
+			count_pack++;
+		} else {
+
+			if (reciever_flag && communication_validation_flag
+					&& buffer[(++count_byte_pack * 22)] == TAGS_DATA_SIZE) {
+
+				memcpy(&earrings[++last_earring].N_TAG,
+						&buffer[(count_byte_pack * 22) + 7], EARRING_SIZE);
+
+				PRINTF("Brinco: ");
+
+				for (int i = 0; i < EARRING_SIZE; i++) {
+					PRINTF("%x ", earrings[last_earring].N_TAG[i]);
+				}
+				PRINTF("\n");
+				if (earring_counter == PACKAGE_SIZE - 1) {
+					earring_counter = 0;
+				}
+				PRINTF("\n last: (%d)", last_earring);
+				communication_validation_flag = 0;
+
+				if (last_earring == EARRINGS_MAX_SIZE - 1) {
+					last_earring = EARRINGS_MAX_SIZE - 2;
+				}
+				if(count_byte_pack >= count_pack){
+				count_byte_pack = -1;
+				flag_new_pack = 0;
+				count_pack = 0;
+				}
+
+			}
+
+		}
+
 	}
 
 }
