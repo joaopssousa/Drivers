@@ -22,7 +22,7 @@ extern bool reciever_flag;
 extern uint8_t send_flag;
 extern uint8_t count_send_flag;
 extern uint8_t flag_new_pack;
-
+extern uint8_t count_tags;
 
 typedef enum  {
 	 ANTENNA1 = 0x80,

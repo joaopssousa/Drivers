@@ -7,6 +7,7 @@ uint8_t flag_recebe = 0;
 uint8_t flag_data_comuniation = 0;
 uint8_t flag_new_pack = 0;
 uint8_t count_pack = 0;
+uint8_t count_tags = 0;
 
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
     switch(ANT){             		 \
@@ -37,6 +38,7 @@ uint8_t CHAFON_ANSWER[] = { 0x11, 0x00, 0x21, 0x00, 0x02, 0x01, 0x62, 0x02,
 		0x31, 0x80, 0x21, 0x00, 0x01, 0x01, 0x00, 0x00, 0xcd, 0xe0 };
 
 uint8_t CHAFON_END_PACK[] = { 0x07, 0x00, 0x01, 0x01, 0x01, 0x00, 0x1e, 0x4b };
+uint8_t CHAFON_START_PACK[] = { 0x15, 0x00, 0x01, 0x03, 0x01, 0x01, 0x0c };
 
 uint8_t reciver_buffer[1];
 uint8_t data[DATA_MAX_SIZE] = { };
@@ -150,7 +152,7 @@ static uint8_t check_earring_size() {
 	if (last_earring > -1 && last_earring >= number_earrings) {
 		return 1;
 	} else {
-		PRINTF("\n-----ZEROU------(%d)(%d)\n", number_earrings, last_earring);
+		//PRINTF("\n-----ZEROU------(%d)(%d)\n", number_earrings, last_earring);
 		number_earrings = 0;
 		last_earring = -1;
 		return 0;
@@ -163,74 +165,66 @@ void data_request_chafon(ANTENNAS antenna) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) DATA_REQUEST, DATA_REQUEST[0] + 1,
 			100);
 }
-uint8_t buffer[500];
+uint8_t buffer[EARRING_SIZE];
 void data_Validation() {
 
 	uint8_t verification_buffer[500];
 
 	if (flag_new_pack) {
-		memcpy(verification_buffer, data, data[0] + 1);
+		memcpy(verification_buffer, data, count_tags*22);
 
-//		for (int i = 0; i <= verification_buffer[0]; i++) {
-//			PRINTF("%x ", verification_buffer[i]);
-//		}
+		for (int i = 0; i <= count_byte; i++) {
+			PRINTF("%x ", verification_buffer[i]);
+		}
+		PRINTF(" endPack\n");
+		count_byte = 0;
+
 		if (!verification_flag
 				&& verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
-			count_pack = 0;
 		}
 
-		if (memcmp(verification_buffer, CHAFON_END_PACK, END_PACK_DATA_SIZE + 1)
-				!= 0 && verification_buffer[0] != 0x11) {
-
-			memcpy(&buffer[count_pack * 22], verification_buffer,
-					verification_buffer[0] + 1);
-			for (int i = 0; i <= (count_pack * 22); i++) {
-				PRINTF("%x ", buffer[i]);
-			}
-			PRINTF("endPACK\n");
-			count_pack++;
-		} else {
-
-			if (reciever_flag && communication_validation_flag
-					&& buffer[(++count_byte_pack * 22)] == TAGS_DATA_SIZE) {
-
-				memcpy(&earrings[++last_earring].N_TAG,
-						&buffer[(count_byte_pack * 22) + 7], EARRING_SIZE);
-
-				PRINTF("Brinco: ");
-
-				for (int i = 0; i < EARRING_SIZE; i++) {
-					PRINTF("%x ", earrings[last_earring].N_TAG[i]);
-				}
-				PRINTF("\n");
-				if (earring_counter == PACKAGE_SIZE - 1) {
-					earring_counter = 0;
-				}
-				PRINTF("\n last: (%d)", last_earring);
-				communication_validation_flag = 0;
-
-				if (last_earring == EARRINGS_MAX_SIZE - 1) {
-					last_earring = EARRINGS_MAX_SIZE - 2;
-				}
-				if(count_byte_pack >= count_pack){
-				count_byte_pack = -1;
-				flag_new_pack = 0;
-				count_pack = 0;
-				}
-
-			}
-
-		}
+//
+//	if (reciever_flag && communication_validation_flag
+//						&& buffer[(++count_byte_pack * 22)] == TAGS_DATA_SIZE) {
+//
+//					memcpy(&earrings[++last_earring].N_TAG,
+//							&buffer[(count_byte_pack * 22) + 7], EARRING_SIZE);
+//
+//					PRINTF("\n Brinco: ");
+//
+//					for (int i = 0; i < EARRING_SIZE; i++) {
+//						PRINTF("%x ", earrings[last_earring].N_TAG[i]);
+//					}
+//					PRINTF("\n");
+//					if (earring_counter == PACKAGE_SIZE - 1) {
+//						earring_counter = 0;
+//					}
+//					PRINTF("\n last: (%d)", last_earring);
+//					communication_validation_flag = 0;
+//
+//					if (last_earring == EARRINGS_MAX_SIZE - 1) {
+//						last_earring = EARRINGS_MAX_SIZE - 2;
+//					}
+//
+//					PRINTF("\n CP: %d", count_pack);
+//					PRINTF("\n CBP: %d", count_byte_pack);
+//
+//					if (count_byte_pack <= count_pack) {
+//
+//						count_byte_pack = -1;
+//						flag_new_pack = 0;
+//						count_pack = 0;
+//					}
+//
+//				}
 
 	}
-
 }
-
 static void verification_Comunication_Buffer(
 		uint8_t verification_buffer[TAGS_DATA_SIZE]) {
-	//memcpy(verification_buffer,data,19);
+//memcpy(verification_buffer,data,19);
 
 	if (verification_buffer[0] == 0x11
 			&& memcmp(verification_buffer, CHAFON_ANSWER, CHAFON_ANSWER[0] + 1)
