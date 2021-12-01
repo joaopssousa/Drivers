@@ -16,6 +16,7 @@
 extern bool communication_validation_flag;
 extern uint8_t reciver_buffer[1];
 extern uint8_t data[DATA_MAX_SIZE];
+extern uint8_t data_aux[DATA_MAX_SIZE];
 extern uint16_t count_byte;
 extern int number_earrings;
 extern bool reciever_flag;

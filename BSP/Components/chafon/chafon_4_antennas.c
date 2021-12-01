@@ -8,6 +8,7 @@ uint8_t flag_data_comuniation = 0;
 uint8_t flag_new_pack = 0;
 uint8_t count_pack = 0;
 uint8_t count_tags = 0;
+uint8_t data_aux[DATA_MAX_SIZE];
 
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
     switch(ANT){             		 \
@@ -171,19 +172,27 @@ void data_Validation() {
 	uint8_t verification_buffer[500];
 
 	if (flag_new_pack) {
-		memcpy(verification_buffer, data, count_tags*22);
 
-		for (int i = 0; i <= count_byte; i++) {
+		memcpy(verification_buffer,data, data[0]+1);
+
+		for (int i = 0; i <=  verification_buffer[0] ; i++) {
+
 			PRINTF("%x ", verification_buffer[i]);
+
 		}
-		PRINTF(" endPack\n");
-		count_byte = 0;
+		PRINTF(" endPack\n\n");
+
+
+
+
 
 		if (!verification_flag
 				&& verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
 		}
+
+		flag_new_pack = 0;
 
 //
 //	if (reciever_flag && communication_validation_flag
