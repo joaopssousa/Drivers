@@ -33,6 +33,7 @@ BMP280_HandleTypedef bmp280;
 uint32_t count_velo = 0;
 uint32_t aux_count_velo = 0;
 uint16_t pluviometer_count=0;
+static float tensao[TOTAL_WIND_POSITION] = {1.0, 0.609, 0.436, 0.338, 0.278, 0.234, 0.2, 0.18};
 
 extern char Buffer_to_send[sizeof(Estation_Parameters)];
 
@@ -43,16 +44,35 @@ static void Call_Pluviometer(Estation_Parameters *Parameters);
 static bool Call_BME280(Estation_Parameters *Parameters);
 static bool Call_Biruta(Estation_Parameters *Parameters);
 static void Call_Anemometro(Estation_Parameters *Parameters);
+static void turn_on_bme(void);
+//static void turn_off_bme(void);
+
+void reset_bme(void){
+	turn_off_bme();
+	HAL_Delay(50);
+	enable_bme();
+}
+
+void enable_bme(void){
+	turn_on_bme();
+	PRINTF("Iniciando BME\r\n");
+	if (!bmp280_init(&bmp280, &bmp280.params)) {
+			PRINTF("Falha no BME\r\n");
+			flagsStation.bmp_failed=1;
+	}
+	PRINTF("OK\r\n");
+}
 
 void init_station()
 {
-
 	/*
 	 * Inicializa os parâmetros padrão do BMP280.
 	 */
 	bmp280_init_default_params(&bmp280.params);
 	bmp280.addr = BMP280_I2C_ADDRESS_0;
 	bmp280.i2c = &hi2c1;
+
+	enable_bme();
 
 	if (!bmp280_init(&bmp280, &bmp280.params)) {
 		flagsStation.bmp_failed=1;
@@ -64,17 +84,19 @@ void init_station()
 	initStruct.Mode = GPIO_MODE_IT_RISING;
 	initStruct.Pull = GPIO_PULLUP;
 	HW_GPIO_Init(ANEMOMETRO_GPIO_Port, ANEMOMETRO_Pin, &initStruct);
-
 	HW_GPIO_SetIrq(ANEMOMETRO_GPIO_Port, ANEMOMETRO_Pin, 0, mede_velocidade_vento);
 
 	/* Configura Interrupção do Pluviometro */
 	initStruct.Mode = GPIO_MODE_IT_RISING;
 	initStruct.Pull = GPIO_PULLDOWN;
-
 	HW_GPIO_Init(PLUVIOMETRO_GPIO_Port, PLUVIOMETRO_Pin, &initStruct);
-
 	HW_GPIO_SetIrq(PLUVIOMETRO_GPIO_Port, PLUVIOMETRO_Pin, 0, mede_mm_chuva);
 
+	/* Configura pino de controle de alimentação do BME */
+	initStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	initStruct.Pull = GPIO_PULLUP;
+	initStruct.Speed = GPIO_SPEED_MEDIUM;
+	HW_GPIO_Init(BME_CONTROL_PORT, BME_CONTROL_PIN, &initStruct);
 }
 
 /*
@@ -82,22 +104,16 @@ void init_station()
 */
 static bool Call_BME280(Estation_Parameters *Parameters)
 {
-
 	if(!flagsStation.bmp_failed){
 		if (!bmp280_read_float(&bmp280, &temperature, &pressure, &humidity))
 		{
-			// ACIONAR UMA FLAG PARA DIZER QUE DEU PROBLEMA NA LEITURA DO BMP280
-			// Por padrão se a inicialização não funcionar todos retornam 0xFF.
+			PRINTF("Erro na Leitura\r\n");
 			Parameters->temperatura = 0xFF;
 			Parameters->pressao = 0xFF;
 			Parameters->humidade = 0xFF;
 			return 0;
 		}
 
-		// Faz a requisição dos dados do BME280
-		bmp280_read_float(&bmp280, &temperature, &pressure, &humidity);
-
-		// Muda os dados para poder enviar com duas casa decimais para envio
 		Parameters->temperatura = (float)temperature*100;
 		Parameters->pressao = (float)pressure*100;
 		Parameters->humidade = (float)humidity*100;
@@ -111,16 +127,16 @@ static bool Call_BME280(Estation_Parameters *Parameters)
  */
 static void Call_Pluviometer(Estation_Parameters *Parameters)
 {
-
 	Parameters->pluviometria = ((double)(pluviometer_count/4))*1000;
-	PRINTF("Pluvi %d\r\n", pluviometer_count);
-
 }
 
 
 static bool Call_Biruta(Estation_Parameters *Parameters)
 {
 	ADC_ChannelConfTypeDef adcConf = {0};
+
+	double raw = 0;
+	double raw2 = 0;
 
     adcConf.SamplingTime = ADC_SAMPLETIME_56CYCLES;
     adcConf.Channel = ADC_CHANNEL_7;
@@ -129,29 +145,22 @@ static bool Call_Biruta(Estation_Parameters *Parameters)
 
 	// Recebe leitura do ADC da biruta e passa para variavel posicao
 	double tensao_de_posicao = 0;
-	//static float resistencia[8] = {4.67, 4.63, 4.58, 4.51, 4.4, 4.25, 3.97, 3.33};
-    //static float tensao[] = {1.639, 1.098, 0.825, 0.660, 0.550, 0.470, 0.412, 0.366};
 
-	static float tensao[TOTAL_WIND_POSITION] = {1.0, 0.609, 0.436, 0.338, 0.278, 0.234, 0.2, 0.18};
-
-	double raw = 0;
-	double raw2 = 0;
-	// Ciclo que faz leituras e em seguida calcula a media das mesmas
+	// Faz MAX_READINGS leituras e em seguida calcula a media
 	for(int i = 0;i<MAX_READINGS;i++)
 	{
+		refresh_iwdg();
 		HAL_ADC_Start(&hadc2);
 		HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
 		raw = (double) HAL_ADC_GetValue(&hadc2);
 		raw2 = GET_RAW_VOLTAGE(raw);
-		// Divide cada amostra pelo total de leituras para que ao fim do ciclo ja tenha-se a média
 		tensao_de_posicao += raw2/MAX_READINGS;
 		HAL_ADC_Stop(&hadc2);
 	}
 
-	// Por conta de algum erro ou incongruência a leitura fica 4-5% abaixo do real então
-	// adicionei um ganho de 4% ao valor obtido.
-	//tensao_de_posicao *= 1.04;
+	//tensao_de_posicao *= 1.04;	// adicionei um ganho de 4% ao valor obtido.
 	for(int i=TOTAL_WIND_POSITION-1; i>=0; i--){
+		refresh_iwdg();
 		if (tensao_de_posicao <= MAX_VAL(tensao[i])){
 			Parameters->direcao_vento = i;
 			return 1;
@@ -171,19 +180,33 @@ static void Call_Anemometro(Estation_Parameters *Parameters)
 	//float Velo_kmph = Velo_mps*3.6;  		// Calculate wind speed on km/h
 }
 
+static void turn_on_bme(void){
+	HAL_GPIO_WritePin(BME_CONTROL_PORT, BME_CONTROL_PIN, GPIO_PIN_SET);
+	HAL_Delay(50);
+}
+
+void turn_off_bme(void){
+	HAL_GPIO_WritePin(BME_CONTROL_PORT, BME_CONTROL_PIN, GPIO_PIN_RESET);
+}
+
 void read_sensors(Estation_Parameters *Parameters)
 {
+	refresh_iwdg();
+	PRINTF("Leitura do BME\r\n");
 	Call_BME280(Parameters);
-
+	refresh_iwdg();
+	PRINTF("Leitura do Pluviometro\r\n");
 	Call_Pluviometer(Parameters);
-
+	refresh_iwdg();
+	PRINTF("Leitura do Anemometro\r\n");
 	Call_Anemometro(Parameters);
-
+	refresh_iwdg();
 	PRINTF("Contador Vento %d\r\n", count_velo);
-
+	refresh_iwdg();
+	PRINTF("Leitura da Biruta\r\n");
 	Call_Biruta(Parameters);
 
-
+	refresh_iwdg();
 	int i = sizeof(Estation_Parameters) - 1;
 	int j = 0;
 	//inverte a ordem dos dados.
@@ -194,6 +217,7 @@ void read_sensors(Estation_Parameters *Parameters)
 		Buffer_to_send[i] = temp;
 		j++;i--;
 	}
+	refresh_iwdg();
 	memcpy(Buffer_to_send,Parameters,sizeof(Estation_Parameters));
 
 }

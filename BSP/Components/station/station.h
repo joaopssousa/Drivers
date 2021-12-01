@@ -11,6 +11,27 @@
 
 #include "bmp280.h"
 
+#define BME_CONTROL_PIN GPIO_PIN_7
+#define BME_CONTROL_PORT GPIOD
+
+#define BIRUTA_Pin GPIO_PIN_7
+#define BIRUTA_GPIO_Port GPIOA
+
+#define ANEMOMETRO_Pin GPIO_PIN_14
+#define ANEMOMETRO_GPIO_Port GPIOE
+#define ANEMOMETRO_EXTI_IRQn EXTI0_IRQn
+
+#define PLUVIOMETRO_Pin GPIO_PIN_15
+#define PLUVIOMETRO_GPIO_Port GPIOE
+#define PLUVIOMETRO_EXTI_IRQn EXTI2_IRQn
+
+#define SCL_BME280_Pin GPIO_PIN_6
+#define SCL_BME280_GPIO_Port GPIOB
+
+#define SDA_BME280_Pin GPIO_PIN_7
+#define SDA_BME280_GPIO_Port GPIOB
+
+
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
@@ -52,8 +73,8 @@ typedef union
 		  active_irradiator : 1,		/* 1: Irradiador presente */
           receive_measure_irrad : 1, 	/* 1: Recebeu uma medida válida do Medidor de irradiacao */
 		  read_sensors : 1,     		/* 1: Realiza leitura dos sensores */
-          spare3 : 1,     		/* Unused */
-          spare4 : 1,     		/* Unused */
+          spare3 : 1,     		/* 1: Habilita BME */
+          spare4 : 1,     		/* 1: Habilita contador de tempo */
           spare5 : 1;     		/* Unused */
  };
 } flags_station;
@@ -101,6 +122,12 @@ void mede_mm_chuva();
 void mede_velocidade_vento();
 
 void init_station();
+
+void enable_bme(void);
+
+void reset_bme(void);
+
+void turn_off_bme(void);
 
 
 #endif /* SRC_STATION_H_ */

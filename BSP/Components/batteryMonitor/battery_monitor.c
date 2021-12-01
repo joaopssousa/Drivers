@@ -23,8 +23,8 @@
 #define VBAT VBAT_4V // Indicates Max battery voltage
 
 #if VBAT == VBAT4V
-	#define RESISTOR1 470U
-	#define RESISTOR2 1000U
+	#define RESISTOR1 2200U
+	#define RESISTOR2 10000U
 #elif VBAT == VBAT_12V
 	#define RESISTOR1 10000U
 	#define RESISTOR2 3400U
@@ -55,7 +55,7 @@ double get_battery_voltage (void)
 
 	uint16_t adc_return_value = HAL_ADC_GetValue(&hadc_bat_monitor);
 	double voltage_on_adc_pin = adc_return_value *  MAX_INPUT_VOLTAGE_ON_ADC / MAX_RESOLUTION_ADC;
-	double battery_voltage = (VOLTAGE_DIVIDER_RATIO * voltage_on_adc_pin) - OFFSET;
+	double battery_voltage = (VOLTAGE_DIVIDER_RATIO * voltage_on_adc_pin) /*- OFFSET*/;
 
 	return battery_voltage;
 }

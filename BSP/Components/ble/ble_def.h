@@ -1,5 +1,5 @@
-#ifndef __CURRAL_H
-#define __CURRAL_H
+#ifndef __BLEPINS_H
+#define __BLEPINS_H
 
 #define BLE_BRK_Pin GPIO_PIN_8
 #define BLE_BRK_GPIO_Port GPIOA

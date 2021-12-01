@@ -86,14 +86,9 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 
 extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;	// Porta serial do módulo RFID
 
 extern int count_send;
 
-//extern unsigned char flag_start;
-//extern unsigned char flag_tag;
-//extern unsigned char flag_confirm;
-//extern unsigned char flag_connection;
 extern unsigned char flag_send_timeout;
 
 extern uint8_t message[TAG_SIZE];

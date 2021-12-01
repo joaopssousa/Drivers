@@ -31,7 +31,7 @@ unsigned char flag_send_timeout = RESET;
 #define ANSWER_DEVICE_TYPE			0x34
 #define ANSWER_WRONG_DEVICE_TYPE	0x35
 
-uint8_t message_ble[MSG_BLE_SIZE] = { 0 };		// Mensagem do bluetooth
+uint8_t message_ble[MSG_BLE_SIZE] = { 0 };	// Mensagem do bluetooth
 int ble_index = 0;							// Index de mensagem do bluetooth
 int ble_state = 0;							// Flag de estado do bluetooth
 
@@ -45,8 +45,7 @@ uint8_t answer_update_success_buffer [3] =   {0x0A, ANSWER_UPDATE_SUCCESS, 0x0D}
 uint8_t answer_device_type[4] = 			 {0x0A, ANSWER_DEVICE_TYPE, DEVICE_TYPE, 0x0D};
 
 
-FRESULT res; 						/* FatFs function common result code */
-uint32_t byteswritten, bytesread; 	/* File write/read counts */
+
 uint8_t wtext[TAG_SIZE] = { 0 }; 	/* File write buffer */
 uint8_t rtext[_MAX_SS] = { 0 };		/* File read buffer */
 
