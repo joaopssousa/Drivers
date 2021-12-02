@@ -4,7 +4,7 @@
 
 
 #define EARRING_SIZE			  	12
-#define EARRINGS_MAX_SIZE		  	500
+#define EARRINGS_MAX_SIZE		  	200
 #define DATA_MAX_SIZE		  	  	200
 #define ANSWER_COMMUNICATION_SIZE 	0x11
 #define TAGS_DATA_SIZE		  	  	0x15

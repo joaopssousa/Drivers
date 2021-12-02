@@ -166,70 +166,54 @@ void data_request_chafon(ANTENNAS antenna) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) DATA_REQUEST, DATA_REQUEST[0] + 1,
 			100);
 }
-uint8_t buffer[EARRING_SIZE];
+
 void data_Validation() {
 
-	uint8_t verification_buffer[500];
+	uint8_t verification_buffer[TAGS_DATA_SIZE];
 
 	if (flag_new_pack) {
 
-		memcpy(verification_buffer,data, data[0]+1);
+		memcpy(verification_buffer, data, data[0]+1);
 
-		for (int i = 0; i <=  verification_buffer[0] ; i++) {
+		for (int i = 0; i <= verification_buffer[0]; i++) {
 
 			PRINTF("%x ", verification_buffer[i]);
 
 		}
 		PRINTF(" endPack\n\n");
 
-
-
-
-
-		if (!verification_flag
-				&& verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
+		if (!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
 		}
 
+		if (reciever_flag && communication_validation_flag && verification_buffer[0] == TAGS_DATA_SIZE) {
+
+			memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[7],EARRING_SIZE);
+
+//			PRINTF("\n Brinco: ");
+//
+//			for (int i = 0; i < EARRING_SIZE; i++) {
+//				PRINTF("%x ", earrings[last_earring].N_TAG[i]);
+//			}
+//			PRINTF("\n");
+
+			if (earring_counter == PACKAGE_SIZE - 1) {
+				earring_counter = 0;
+			}
+			//PRINTF("\n last: (%d)", last_earring);
+			communication_validation_flag = 0;
+
+			if (last_earring == EARRINGS_MAX_SIZE - 1) {
+				last_earring = EARRINGS_MAX_SIZE - 2;
+			}
+
+
+		}
 		flag_new_pack = 0;
-
-//
-//	if (reciever_flag && communication_validation_flag
-//						&& buffer[(++count_byte_pack * 22)] == TAGS_DATA_SIZE) {
-//
-//					memcpy(&earrings[++last_earring].N_TAG,
-//							&buffer[(count_byte_pack * 22) + 7], EARRING_SIZE);
-//
-//					PRINTF("\n Brinco: ");
-//
-//					for (int i = 0; i < EARRING_SIZE; i++) {
-//						PRINTF("%x ", earrings[last_earring].N_TAG[i]);
-//					}
-//					PRINTF("\n");
-//					if (earring_counter == PACKAGE_SIZE - 1) {
-//						earring_counter = 0;
-//					}
-//					PRINTF("\n last: (%d)", last_earring);
-//					communication_validation_flag = 0;
-//
-//					if (last_earring == EARRINGS_MAX_SIZE - 1) {
-//						last_earring = EARRINGS_MAX_SIZE - 2;
-//					}
-//
-//					PRINTF("\n CP: %d", count_pack);
-//					PRINTF("\n CBP: %d", count_byte_pack);
-//
-//					if (count_byte_pack <= count_pack) {
-//
-//						count_byte_pack = -1;
-//						flag_new_pack = 0;
-//						count_pack = 0;
-//					}
-//
-//				}
-
 	}
+
+
 }
 static void verification_Comunication_Buffer(
 		uint8_t verification_buffer[TAGS_DATA_SIZE]) {

@@ -207,7 +207,7 @@ int ble_handler(uint8_t *message)
 			 * 	Confirmação de TAG recebida, destravar para enviar nova TAG
 			 */
 			flags_ble.confirm = SET;
-			PRINTF("====>   confirm = SET \r\n");
+			//PRINTF("====>   confirm = SET \r\n");
 
 				// TODO Criar trava de sistema
 			break;
