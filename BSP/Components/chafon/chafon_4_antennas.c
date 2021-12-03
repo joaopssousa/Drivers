@@ -173,19 +173,21 @@ void data_Validation() {
 
 	if (flag_new_pack) {
 
-		memcpy(verification_buffer, data, data[0]+1);
+		memcpy(verification_buffer, data, count_tags * 22);
 
-		for (int i = 0; i <= verification_buffer[0]; i++) {
+		for (int i = 0; i < count_tags * 22; i++) {
 
 			PRINTF("%x ", verification_buffer[i]);
 
 		}
 		PRINTF(" endPack\n\n");
+		count_tags = 0;
 
 		if (!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
 		}
+
 
 		if (reciever_flag && communication_validation_flag && verification_buffer[0] == TAGS_DATA_SIZE) {
 
@@ -215,8 +217,7 @@ void data_Validation() {
 
 
 }
-static void verification_Comunication_Buffer(
-		uint8_t verification_buffer[TAGS_DATA_SIZE]) {
+static void verification_Comunication_Buffer(uint8_t verification_buffer[TAGS_DATA_SIZE]) {
 //memcpy(verification_buffer,data,19);
 
 	if (verification_buffer[0] == 0x11
