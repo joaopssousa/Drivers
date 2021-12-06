@@ -7,8 +7,8 @@ uint8_t flag_recebe = 0;
 uint8_t flag_data_comuniation = 0;
 uint8_t flag_new_pack = 0;
 uint8_t count_pack = 0;
-uint8_t count_tags = 0;
-uint8_t data_aux[DATA_MAX_SIZE];
+int count_tags = 0;
+uint8_t flag_resend = 0;
 
 #define ANTENNA_CRC(ANT, CRC1, CRC2) \
     switch(ANT){             		 \
@@ -48,7 +48,7 @@ uint8_t pack_tags[TAGS_DATA_SIZE][5] = { };
 int last_earring = -1;
 uint16_t earring_current = 0;
 int number_earrings = 0;
-uint16_t count_byte = 0;
+int count_byte = 0;
 int count_byte_pack = -1;
 int count_pack_tags = -1;
 uint8_t earring_counter = 0;
@@ -169,15 +169,15 @@ void data_request_chafon(ANTENNAS antenna) {
 
 void data_Validation() {
 
-	uint8_t verification_buffer[TAGS_DATA_SIZE];
-
+	uint8_t verification_buffer[500];
+	PRINTF(" count_byte: %d \n\n",count_tags);
 	if (flag_new_pack) {
 
-		memcpy(verification_buffer, data, count_tags * 22);
+		memcpy(verification_buffer, data, count_tags);
 
-		for (int i = 0; i < count_tags * 22; i++) {
+		for (int i = 0; i < count_tags ; i++) {
 
-			PRINTF("%x ", verification_buffer[i]);
+			PRINTF("%x ", data[i]);
 
 		}
 		PRINTF(" endPack\n\n");
@@ -187,31 +187,31 @@ void data_Validation() {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
 		}
-
-
-		if (reciever_flag && communication_validation_flag && verification_buffer[0] == TAGS_DATA_SIZE) {
-
-			memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[7],EARRING_SIZE);
-
-//			PRINTF("\n Brinco: ");
 //
-//			for (int i = 0; i < EARRING_SIZE; i++) {
-//				PRINTF("%x ", earrings[last_earring].N_TAG[i]);
+//
+//		if (reciever_flag && communication_validation_flag && verification_buffer[0] == TAGS_DATA_SIZE) {
+//
+//			memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[7],EARRING_SIZE);
+//
+////			PRINTF("\n Brinco: ");
+////
+////			for (int i = 0; i < EARRING_SIZE; i++) {
+////				PRINTF("%x ", earrings[last_earring].N_TAG[i]);
+////			}
+////			PRINTF("\n");
+//
+//			if (earring_counter == PACKAGE_SIZE - 1) {
+//				earring_counter = 0;
 //			}
-//			PRINTF("\n");
-
-			if (earring_counter == PACKAGE_SIZE - 1) {
-				earring_counter = 0;
-			}
-			//PRINTF("\n last: (%d)", last_earring);
-			communication_validation_flag = 0;
-
-			if (last_earring == EARRINGS_MAX_SIZE - 1) {
-				last_earring = EARRINGS_MAX_SIZE - 2;
-			}
-
-
-		}
+//			//PRINTF("\n last: (%d)", last_earring);
+//			communication_validation_flag = 0;
+//
+//			if (last_earring == EARRINGS_MAX_SIZE - 1) {
+//				last_earring = EARRINGS_MAX_SIZE - 2;
+//			}
+//
+//
+//		}
 		flag_new_pack = 0;
 	}
 

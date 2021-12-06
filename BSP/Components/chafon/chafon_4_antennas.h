@@ -16,14 +16,14 @@
 extern bool communication_validation_flag;
 extern uint8_t reciver_buffer[1];
 extern uint8_t data[DATA_MAX_SIZE];
-extern uint8_t data_aux[DATA_MAX_SIZE];
-extern uint16_t count_byte;
+extern uint8_t flag_resend;
+extern int count_byte;
 extern int number_earrings;
 extern bool reciever_flag;
 extern uint8_t send_flag;
 extern uint8_t count_send_flag;
 extern uint8_t flag_new_pack;
-extern uint8_t count_tags;
+extern int count_tags;
 
 typedef enum  {
 	 ANTENNA1 = 0x80,
