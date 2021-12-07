@@ -6,7 +6,7 @@ UART_HandleTypeDef huart2;
 uint8_t flag_recebe = 0;
 uint8_t flag_data_comuniation = 0;
 uint8_t flag_new_pack = 0;
-uint8_t count_pack = 0;
+uint8_t number_tags = 0;
 int count_tags = 0;
 uint8_t flag_resend = 0;
 
@@ -43,7 +43,6 @@ uint8_t CHAFON_START_PACK[] = { 0x15, 0x00, 0x01, 0x03, 0x01, 0x01, 0x0c };
 
 uint8_t reciver_buffer[1];
 uint8_t data[DATA_MAX_SIZE] = { };
-uint8_t pack_tags[TAGS_DATA_SIZE][5] = { };
 
 int last_earring = -1;
 uint16_t earring_current = 0;
@@ -170,54 +169,44 @@ void data_request_chafon(ANTENNAS antenna) {
 void data_Validation() {
 
 	uint8_t verification_buffer[500];
-	PRINTF(" count_byte: %d \n\n",count_tags);
+	PRINTF("\n\n count_byte: %d \n\n", count_tags);
 	if (flag_new_pack) {
 
 		memcpy(verification_buffer, data, count_tags);
 
-		for (int i = 0; i < count_tags ; i++) {
 
-			PRINTF("%x ", data[i]);
-
-		}
-		PRINTF(" endPack\n\n");
-		count_tags = 0;
-
-		if (!verification_flag && verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
+		if (!verification_flag
+				&& verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
 		}
-//
-//
-//		if (reciever_flag && communication_validation_flag && verification_buffer[0] == TAGS_DATA_SIZE) {
-//
-//			memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[7],EARRING_SIZE);
-//
-////			PRINTF("\n Brinco: ");
-////
-////			for (int i = 0; i < EARRING_SIZE; i++) {
-////				PRINTF("%x ", earrings[last_earring].N_TAG[i]);
-////			}
-////			PRINTF("\n");
-//
-//			if (earring_counter == PACKAGE_SIZE - 1) {
-//				earring_counter = 0;
-//			}
-//			//PRINTF("\n last: (%d)", last_earring);
-//			communication_validation_flag = 0;
-//
-//			if (last_earring == EARRINGS_MAX_SIZE - 1) {
-//				last_earring = EARRINGS_MAX_SIZE - 2;
-//			}
-//
-//
-//		}
+		PRINTF("\n (%d)Brinco: ", (count_tags / TAGS_DATA_SIZE));
+		number_tags = (count_tags / 22);
+		if (reciever_flag && communication_validation_flag && verification_buffer[0] == 0X15) {
+			for (int i = 0; i < number_tags; i++) {
+
+				memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[(i * 22) + 0x07], EARRING_SIZE);
+
+			PRINTF("\n (%d)Last ", last_earring);
+			if (earring_counter >= PACKAGE_SIZE - 1) {
+				earring_counter = 0;
+			}
+
+			communication_validation_flag = 0;
+
+			if (last_earring >= EARRINGS_MAX_SIZE - 5) {
+				last_earring = EARRINGS_MAX_SIZE - 10;
+			}
+
+			}
+		}
+		count_tags = 0;
 		flag_new_pack = 0;
 	}
 
 
 }
-static void verification_Comunication_Buffer(uint8_t verification_buffer[TAGS_DATA_SIZE]) {
+static void verification_Comunication_Buffer(uint8_t verification_buffer[START_BYTE_TAGS_DATA]) {
 //memcpy(verification_buffer,data,19);
 
 	if (verification_buffer[0] == 0x11
