@@ -168,35 +168,42 @@ void data_request_chafon(ANTENNAS antenna) {
 
 void data_Validation() {
 
-	uint8_t verification_buffer[500];
+	uint8_t verification_buffer[DATA_MAX_SIZE];
 	PRINTF("\n\n count_byte: %d \n\n", count_tags);
 	if (flag_new_pack) {
 
 		memcpy(verification_buffer, data, count_tags);
+		for (int i = 0; i < count_tags; i++) {
+			PRINTF(" %x", verification_buffer[i]);
+		}
+		PRINTF("\n");
 
-
-		if (!verification_flag
-				&& verification_buffer[0] == ANSWER_COMMUNICATION_SIZE) {
+		if (!verification_flag	&& verification_buffer[TAG_IDENTIFIER_INDEX] == ANSWER_COMMUNICATION_SIZE) {
 			verification_Comunication_Buffer(verification_buffer);
 			flag_new_pack = 0;
 		}
-		PRINTF("\n (%d)Brinco: ", (count_tags / TAGS_DATA_SIZE));
+
 		number_tags = (count_tags / 22);
-		if (reciever_flag && communication_validation_flag && verification_buffer[0] == 0X15) {
+		if (reciever_flag && communication_validation_flag
+				&& verification_buffer[0] == START_BYTE_TAGS_DATA) {
 			for (int i = 0; i < number_tags; i++) {
 
-				memcpy(&earrings[++last_earring].N_TAG, &verification_buffer[(i * 22) + 0x07], EARRING_SIZE);
+				memcpy(&earrings[++last_earring].N_TAG,
+						&verification_buffer[(i * 22) + 7], EARRING_SIZE);
+				PRINTF("\n (%d)Brinco: ", i);
+//				for(int i = 0; i < EARRING_SIZE ; i++)
+//				PRINTF(" %x",earrings[last_earring].N_TAG[i]);
+//				PRINTF("\n");
+				PRINTF("\n (%d)Last ", last_earring);
+				if (earring_counter >= PACKAGE_SIZE - 1) {
+					earring_counter = 0;
+				}
 
-			PRINTF("\n (%d)Last ", last_earring);
-			if (earring_counter >= PACKAGE_SIZE - 1) {
-				earring_counter = 0;
-			}
+				communication_validation_flag = 0;
 
-			communication_validation_flag = 0;
-
-			if (last_earring >= EARRINGS_MAX_SIZE - 5) {
-				last_earring = EARRINGS_MAX_SIZE - 10;
-			}
+				if (last_earring >= EARRINGS_MAX_SIZE - 5) {
+					last_earring = EARRINGS_MAX_SIZE - 10;
+				}
 
 			}
 		}
@@ -204,9 +211,9 @@ void data_Validation() {
 		flag_new_pack = 0;
 	}
 
-
 }
-static void verification_Comunication_Buffer(uint8_t verification_buffer[START_BYTE_TAGS_DATA]) {
+static void verification_Comunication_Buffer(
+		uint8_t verification_buffer[START_BYTE_TAGS_DATA]) {
 //memcpy(verification_buffer,data,19);
 
 	if (verification_buffer[0] == 0x11
