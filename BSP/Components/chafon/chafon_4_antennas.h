@@ -3,7 +3,7 @@
 #include "hw.h"
 
 #define EARRING_SIZE			  	12
-#define EARRINGS_MAX_SIZE		  	50
+#define EARRINGS_MAX_SIZE		  	20
 #define DATA_MAX_SIZE		  	  	500
 #define ANSWER_COMMUNICATION_SIZE 	0x11
 #define START_BYTE_TAGS_DATA	  	0x15
