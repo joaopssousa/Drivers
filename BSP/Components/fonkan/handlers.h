@@ -19,13 +19,15 @@
 #define 	MSG_BLE_SIZE					MSG_WRITE_EARRING_SIZE
 #define 	MSG_RFID_SIZE 				 	3
 #define 	MSG_USER_8W_SIZE			 	9
-#define 	STORAGE_SIZE					200
+#define 	STORAGE_SIZE					500
 #define		EMPTY_QUEUE         			-1
 #define 	TIMEOUT_BETWEEN_RESEND_TAG 		100
 #define     MSG_ID_SIZE 					3
 #define     MSG_MULTI_TAG_SIZE 				3
 #define		MSG_TAG_RCV_SIZE 				3
 #define 	MSG_CONNECTION_ESTABLISHED_SIZE 3
+
+#define 	RETRIES_BEFORE_DISCONNECT 3
 
 typedef enum{
 	YES = 1,
@@ -48,7 +50,7 @@ typedef union
 		  update_mode : 1,     /* Unused */
           enable_handler : 1,     /* Unused */
           rfid_send_cmd : 1,     /* Unused */
-          spare0 : 1;     /* Unused */
+          wait_for_response : 1;     /* Unused */
  };
 } flags_connectivity;
 
@@ -111,7 +113,9 @@ extern Model_TAG store_TAG[STORAGE_SIZE];
 extern int last_TAG;
 extern int in_use_TAG;
 
-extern Model_TAG delayed_store_TAG[STORAGE_SIZE];
+extern int count_confirm;
+
+//extern Model_TAG delayed_store_TAG[STORAGE_SIZE];
 extern int delayed_last_TAG;
 extern int delayed_in_use_TAG;
 extern int delayed_store_flag;
@@ -140,5 +144,8 @@ void break_connection();
 void clear_buffers();
 
 void Ble_Init_GPIO();
+
+void transmit_to_ble(void);
+void read_earrings(void);
 
 #endif /* INC_HANDLERS_H_ */

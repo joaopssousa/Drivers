@@ -49,7 +49,7 @@ static void turn_on_bme(void);
 
 void reset_bme(void){
 	turn_off_bme();
-	HAL_Delay(50);
+	HAL_Delay(200);
 	enable_bme();
 }
 
@@ -182,7 +182,7 @@ static void Call_Anemometro(Estation_Parameters *Parameters)
 
 static void turn_on_bme(void){
 	HAL_GPIO_WritePin(BME_CONTROL_PORT, BME_CONTROL_PIN, GPIO_PIN_SET);
-	HAL_Delay(50);
+	HAL_Delay(200);
 }
 
 void turn_off_bme(void){

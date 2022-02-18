@@ -47,6 +47,7 @@ int message_index = 0;						// Index da mensagem
 uint8_t message_ble[MSG_BLE_SIZE] = { 0 };		// Mensagem do bluetooth
 int ble_index = 0;							// Index de mensagem do bluetooth
 int ble_state = 0;							// Flag de estado do bluetooth
+int count_confirm = 0;
 
 uint8_t TAG[500/*TAG_SIZE*/] = { 0 };					// Vetor de resposta do módulo RFID (Resposta, versão ou TAG)
 
@@ -55,7 +56,7 @@ int last_TAG = -1;							// Variável que mostra a ultima posição ocupada na l
 int in_use_TAG = 0;							// Variável usada para envio sequencial da lista
 
 // Estruturas e indices para armazenamento em cartão SD em caso de falta de conexão com o gateway
-Model_TAG delayed_store_TAG[STORAGE_SIZE] = { 0 };		// Armazenamento de TAGs em caso de sobreposição de leitura, ja iniciada limpa.
+//Model_TAG delayed_store_TAG[STORAGE_SIZE] = { 0 };		// Armazenamento de TAGs em caso de sobreposição de leitura, ja iniciada limpa.
 int delayed_last_TAG = -1;								// Variável que mostra a ultima posição ocupada na lista
 int delayed_in_use_TAG = 0;								// Variável usada para envio sequencial da lista
 int delayed_store_flag = 0;
@@ -134,30 +135,62 @@ int message_handler(uint8_t *message, int pkg_length)
 
 	//memset(message, 0, TAG_SIZE);					// Limpa buffer de mensagem para nova recepção
 
+	PRINTF("Tamanho = %d \r\n", pkg_length);
+
 	if(pkg_length >= TAG_SIZE + 4/*- 1*/)
 	{
-		PRINTF("Tamanho = %d \r\n", pkg_length);
 		/*
 		 * 	Verifica que recebido foi a leitura de uma TAG válida, então:
 		 *  - Copia a TAG para o armazenamento para envio;
 		 *  - Incrementa a referência do último armazenamento.
 		 */
 
-		if(last_TAG>0){
-			if(memcmp(&store_TAG[last_TAG-1], TAG, TAG_SIZE) != 0)	// Como a comparação é feita aqui, deve-se limpar o buffer 'message' depois
-			{
-				memset(message, 0, TAG_SIZE);				// Limpa buffer de mensagem para nova recepção
-				return 2;									// Código de retorno quando a TAG lida é igual a lida anteriormente
+		//##### DEBUG #####
+		PRINTF("fila: %d\r\n", last_TAG);
+//		for (uint8_t i = 0; i < TAG_SIZE;i++)
+//		{
+//			PRINTF("%X ", (store_TAG[last_TAG-1].N_TAG[i]));
+//			PRINTF("%X ", TAG[i]);
+//		}
+//		PRINTF("\r\n");
+		//#############
+
+		if(last_TAG == STORAGE_SIZE - (total_de_brincos+1)){			// Se for vista a ultima TAG, então começa a sobreescrever
+					PRINTF("FILA CHEIA\r\n");
+					clear_buffers();
+		}
+
+
+		int j=0;
+		for (int i=0; i<total_de_brincos;i++){
+			if (last_TAG>0){
+				for(j=0; j<last_TAG;j++){
+					if(memcmp(&store_TAG[j], &TAG[(i*TAG_SIZE)], TAG_SIZE-6) == 0)
+					{
+						PRINTF("REPETIDO\r\n");
+						break;
+					}
+				}
+			}
+			if((j==last_TAG) || (last_TAG==EMPTY_QUEUE)){
+				PRINTF("COPIA PRO FILA\r\n");
+				memcpy(store_TAG[++last_TAG].N_TAG, &TAG[(i*TAG_SIZE)], TAG_SIZE-1);
 			}
 		}
 
-		if(last_TAG == STORAGE_SIZE - 1){			// Se for vista a ultima TAG, então começa a sobreescrever
-			clear_buffers();
-		}
+//			if(memcmp(&store_TAG[last_TAG], TAG, TAG_SIZE-5) == 0)	// Como a comparação é feita aqui, deve-se limpar o buffer 'message' depois
+//			{
+//				PRINTF("REPETIDO\r\n");
+//				memset(message, 0, TAG_SIZE);				// Limpa buffer de mensagem para nova recepção
+//				return 2;									// Código de retorno quando a TAG lida é igual a lida anteriormente
+//			}
 
-		for (int i=0; i<total_de_brincos;i++){
-			memcpy(store_TAG[++last_TAG].N_TAG, &TAG[(i*TAG_SIZE)], TAG_SIZE-1);
-		}
+
+
+
+//		for (int i=0; i<total_de_brincos;i++){
+//			memcpy(store_TAG[++last_TAG].N_TAG, &TAG[(i*TAG_SIZE)], TAG_SIZE-1);
+//		}
 
 		return 1;							// Confirmação que foi lida e armazenada uma TAG
 	}
@@ -183,21 +216,24 @@ int ble_handler(uint8_t *message)
 			/*
 			 * 	Pedido de Conexão
 			 */
-			if(flags_ble.connection == SET)
-			{
+//			if(flags_ble.connection == SET)
+//			{
 				PRINTF("Recebeu Start\r\n");
 				// Se a flag de conexão estiver ativa devido a verificação pelo timer, confirme.
 				HAL_UART_Transmit(&huart1, (uint8_t *)BLE_ESTABLISHED_CONNECTION, MSG_CONNECTION_ESTABLISHED_SIZE, 100);
 			  	HAL_TIM_Base_Start_IT(&htim2);			// Inicia o timer que envia as requisições para o módulo RFID
 			  	flags_ble.start = SET;
-			}
-			else
-			{
+			  	count_confirm=0;
+			  	flags_ble.wait_for_response = RESET;
+			  	flags_ble.connection = SET;
+//			}
+//			else
+//			{
 				// TODO Testar se a quebra de conexão continua travando e como ajeitar
-				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
-				flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
-				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
-			}
+//				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG para requisição do ID do RFID
+//				flags_ble.start = RESET;						// Reseta a flag de inicio da comunicação
+//				break_connection();						// Quebra conexão pois houve algum erro no módulo BLE
+//			}
 
 			break;
 		case TAG_CONFIRMATION:
@@ -205,6 +241,7 @@ int ble_handler(uint8_t *message)
 			 * 	Confirmação de TAG recebida, destravar para enviar nova TAG
 			 */
 			flags_ble.confirm = SET;
+			flags_ble.wait_for_response=RESET;
 			PRINTF("====>   confirm = SET \r\n");
 
 				// TODO Criar trava de sistema
@@ -223,7 +260,7 @@ int ble_handler(uint8_t *message)
 			{
 				HAL_TIM_Base_Stop_IT(&htim2);			// Para momentâneamente as requisições e leituras de TAG
 				flags_ble.start = RESET;				// Reseta a flag de inicio da comunicação
-				//clear_buffers();
+				clear_buffers();
 				break_connection();						// Função de quebra de conexão
 			}
 
@@ -318,7 +355,21 @@ void clear_buffers(){
 }
 #endif
 
+void transmit_to_ble(void){
+	//######### DEBUG ################
+	PRINTF("%d Brinco: ", in_use_TAG);
+	for (uint8_t i = 0; i <= TAG_SIZE-1;i++)
+	{
+		PRINTF("%X ", (store_TAG[in_use_TAG].N_TAG[i]));
+	}
+	PRINTF("\r\n");
+	//################################
+	HAL_UART_Transmit(&huart1, (uint8_t*) store_TAG[in_use_TAG].N_TAG, TAG_SIZE-1, 1000);
+}
 
+void read_earrings(void){
+	HAL_UART_Transmit(&huart2, (uint8_t *)READ_MULTIPLE_TAG, MSG_MULTI_TAG_SIZE, 50);
+}
 
 /**
   * @brief USART1 Initialization Function
